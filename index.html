@@ -152,6 +152,8 @@ main{flex:1;padding:0 20px 96px;display:flex;flex-direction:column;gap:16px}
 .md-prev{font-family:var(--mono);font-size:11.5px;line-height:1.7;background:var(--surface-2);border-radius:10px;padding:13px;max-height:240px;overflow:auto;white-space:pre;color:var(--ink-soft)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:12px 16px;border-radius:11px;font-size:14px;font-weight:500;border:1px solid var(--line);background:var(--surface);transition:.15s}
 .btn.primary{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.btn.quiet{border-color:transparent;background:none;color:var(--muted);font-weight:400;font-size:13.5px}
+.btn.quiet:hover{color:var(--ink)}
 .btn.primary:hover{opacity:.88}
 .btn:disabled{opacity:.4;cursor:not-allowed}
 .btn-row{display:flex;gap:9px;flex-wrap:wrap}
@@ -301,6 +303,9 @@ details.adv-box .adv-body{padding:0 15px 15px;display:flex;flex-direction:column
 <script>
 (function(){
 "use strict";
+
+/* 앱 버전. 여기만 고치면 서비스워커 캐시 이름까지 따라갑니다(build.js가 읽어 갑니다). */
+var APP_V = "v7";
 
 /* ==================== 저장소 ==================== */
 var KEY = "naranhi.v1";
@@ -1237,7 +1242,7 @@ function openSettings(){
     pinBtn.onclick = function(){ close(); setTimeout(openPinSetup, 180); };
     wrap.appendChild(pinBtn);
 
-    wrap.appendChild(el('<div class="disclaimer" style="padding-top:6px">기록은 이 브라우저에만 저장됩니다. 브라우저 데이터를 지우면 함께 사라지니, 보관 탭에서 주기적으로 파일로 남겨 두세요.</div>'));
+    wrap.appendChild(el('<div class="disclaimer" style="padding-top:6px">기록은 이 브라우저에만 저장됩니다. 브라우저 데이터를 지우면 함께 사라지니, 보관 탭에서 주기적으로 파일로 남겨 두세요.<br><br>겨를 <span class="mono">'+esc(APP_V)+'</span> · 최신이 아닌 것 같으면 앱을 완전히 껐다가 다시 열어 주세요.</div>'));
 
     var danger = el('<button class="btn" style="color:var(--warn);border-color:var(--warn)">모든 기록 지우기</button>');
     danger.onclick = function(){
@@ -2128,11 +2133,11 @@ function openIntro(done){
       tt.appendChild(el('<div class="tt"><span class="bar" style="background:var(--kid)"></span><span class="k" style="color:var(--kid)">아이</span><span class="d">2초. 한 줄이면 충분합니다.</span></div>'));
       box.appendChild(tt);
       box.appendChild(el('<p class="dim">힘든 일을 적으면 그 주제에 맞는 참고자료가 따라옵니다. 기록은 이 기기 안에만 저장되고, 어디로도 보내지 않습니다.</p>'));
-      var b1 = el('<button class="btn primary">시작하기</button>');
+      var row = el('<div class="btn-row" style="gap:9px;flex-wrap:nowrap"></div>');
+      var b1 = el('<button class="btn primary" style="flex:1.8">시작하기</button>');
       b1.onclick = function(){ step = 1; draw(); };
-      box.appendChild(b1);
       /* 노트북·아이패드처럼 새 기기에서 여는 경우. 없던 아이를 다시 만들 필요가 없습니다. */
-      var b3 = el('<button class="btn">이미 쓰던 계정으로 이어서</button>');
+      var b3 = el('<button class="btn" style="flex:1;white-space:nowrap">이어서</button>');
       b3.onclick = function(){
         openSyncSetup(function(){
           S.onboarded = true; save();
@@ -2140,9 +2145,11 @@ function openIntro(done){
           done();
         });
       };
-      box.appendChild(b3);
+      row.appendChild(b1); row.appendChild(b3);
+      box.appendChild(row);
+      box.appendChild(el('<div class="dim" style="margin-top:-17px">처음이면 <b>시작하기</b>, 다른 기기에서 쓰던 계정이 있으면 <b>이어서</b>.</div>'));
 
-      var b2 = el('<button class="btn">예시로 먼저 둘러보기</button>');
+      var b2 = el('<button class="btn quiet">예시로 먼저 둘러보기</button>');
       b2.onclick = function(){ finish(true); };
       box.appendChild(b2);
 

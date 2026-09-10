@@ -170,8 +170,11 @@ const manifest = {
   ],
 };
 
-const sw = `/* 겨를 — 오프라인 캐시. 앱을 고칠 때마다 VERSION을 올리세요. */
-const VERSION = "gyeoreul-v6";
+// 버전은 index.html의 APP_V 한 곳에서만 관리합니다.
+const APP_V = (body.match(/var APP_V\s*=\s*"([^"]+)"/) || [, "v0"])[1];
+
+const sw = `/* 겨를 — 오프라인 캐시. 버전은 index.html의 APP_V를 따라갑니다. */
+const VERSION = "gyeoreul-${APP_V}";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png"];
 
 self.addEventListener("install", (e) => {
