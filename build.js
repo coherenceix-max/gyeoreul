@@ -171,7 +171,7 @@ const manifest = {
 };
 
 const sw = `/* 겨를 — 오프라인 캐시. 앱을 고칠 때마다 VERSION을 올리세요. */
-const VERSION = "gyeoreul-v2";
+const VERSION = "gyeoreul-v3";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png"];
 
 self.addEventListener("install", (e) => {

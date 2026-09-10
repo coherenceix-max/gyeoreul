@@ -329,6 +329,12 @@ function day(k, make){
   if(!S.days[k] && make) S.days[k] = { ritual:{}, me:[], kid:[] };
   return S.days[k] || { ritual:{}, me:[], kid:[] };
 }
+/* 기기마다 겹치지 않는 번호. 합칠 때 이게 기준이 됩니다. */
+function uid(){
+  return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 9);
+}
+/* 리추얼은 기록별 번호가 없어서, 하루 단위로 "언제 고쳤는지"만 남깁니다. */
+function markRitual(d){ d.ritualU = Date.now(); }
 
 /* ==================== 태그 사전 ==================== */
 var KID_TOPICS = [
@@ -666,7 +672,7 @@ function openWrite(track, k){
         toast("한 가지라도 남겨 주세요."); return;
       }
       var now = new Date();
-      var entry = { id: Date.now()+"", t: String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0"), text:text };
+      var entry = { id: uid(), u: Date.now(), t: String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0"), text:text };
       if(isKid){ entry.feel = picked.feel; entry.topics = picked.topics; d.kid.push(entry); }
       else { entry.mood = picked.mood; entry.tags = picked.tags; d.me.push(entry); }
       S.days[k] = d; save(); close(); render();
@@ -686,7 +692,7 @@ function startWrite(track){
   if(d.ritual && d.ritual.breath){ openWrite(track, k); return; }
   openBreathing(function(completed){
     var dd = day(k, true);
-    if(completed){ dd.ritual.breath = true; save(); }
+    if(completed){ dd.ritual.breath = true; markRitual(dd); save(); }
     setTimeout(function(){ openWrite(track, k); }, 180);
   });
 }
@@ -718,8 +724,8 @@ function viewToday(){
     var b = el('<button class="chk" aria-pressed="'+(r[it[0]]?"true":"false")+'"><span class="dot"></span>'+esc(it[1])+'</button>');
     b.onclick = function(){
       var dd = day(k, true);
-      if(it[0]==="breath" && !dd.ritual.breath){ openBreathing(function(c){ if(c){ dd.ritual.breath=true; save(); } render(); }); return; }
-      dd.ritual[it[0]] = !dd.ritual[it[0]]; save(); render();
+      if(it[0]==="breath" && !dd.ritual.breath){ openBreathing(function(c){ if(c){ dd.ritual.breath=true; markRitual(dd); save(); } render(); }); return; }
+      dd.ritual[it[0]] = !dd.ritual[it[0]]; markRitual(dd); save(); render();
     };
     checks.appendChild(b);
   });
@@ -728,7 +734,7 @@ function viewToday(){
   var sleepWrap = el('<div class="stack" style="gap:7px"><span class="eyebrow">어젯밤 잠</span><div class="sleep-row" id="sl"></div></div>');
   [4,5,6,7,8,9].forEach(function(h){
     var b = el('<button class="sleep-btn" aria-pressed="'+(r.sleep===h?"true":"false")+'">'+(h===4?"≤4":h===9?"9+":h)+'</button>');
-    b.onclick = function(){ var dd=day(k,true); dd.ritual.sleep = (dd.ritual.sleep===h?null:h); save(); render(); };
+    b.onclick = function(){ var dd=day(k,true); dd.ritual.sleep = (dd.ritual.sleep===h?null:h); markRitual(dd); save(); render(); };
     sleepWrap.querySelector("#sl").appendChild(b);
   });
   sleepWrap.querySelector("#sl").appendChild(el('<span class="small" style="margin-left:2px">시간</span>'));
@@ -1542,25 +1548,85 @@ function doBackup(){
     S.lastExport = todayKey(); save(); toast("백업했습니다."); render();
   });
 }
+/* 두 벌의 기록을 합칩니다. 어느 쪽도 지우지 않는 것이 원칙입니다.
+   - 기록은 고유 번호로 합집합 — 폰과 아이패드에서 각각 쓴 건 둘 다 남습니다
+   - 같은 번호가 양쪽에 있으면 나중에 고친 쪽을 택합니다
+   - 리추얼 체크는 하루 단위로 나중에 고친 쪽 */
+function mergeInto(target, incoming){
+  var r = { days:0, added:0, updated:0, ritual:0 };
+  var src = (incoming && incoming.days) || {};
+  Object.keys(src).forEach(function(k){
+    if(!target.days[k]){ target.days[k] = { ritual:{}, me:[], kid:[] }; r.days++; }
+    var dst = target.days[k], s = src[k];
+    ["me","kid"].forEach(function(tr){
+      if(!dst[tr]) dst[tr] = [];
+      (s[tr] || []).forEach(function(e){
+        if(!e || !e.id) return;
+        var at = -1;
+        for(var i = 0; i < dst[tr].length; i++){ if(dst[tr][i].id === e.id){ at = i; break; } }
+        if(at < 0){ dst[tr].push(e); r.added++; }
+        else if((e.u || 0) > (dst[tr][at].u || 0)){ dst[tr][at] = e; r.updated++; }
+      });
+      dst[tr].sort(function(a, b){ return (a.t || "") < (b.t || "") ? -1 : 1; });
+    });
+    if(s.ritual && (s.ritualU || 0) > (dst.ritualU || 0)){
+      dst.ritual = Object.assign({}, dst.ritual, s.ritual);
+      dst.ritualU = s.ritualU;
+      r.ritual++;
+    } else if(s.ritual && !dst.ritualU && !Object.keys(dst.ritual || {}).length){
+      dst.ritual = Object.assign({}, s.ritual);
+      dst.ritualU = s.ritualU || 0;
+      r.ritual++;
+    }
+  });
+  return r;
+}
 function openRestore(){
   openSheet("백업 불러오기", function(sheet, close){
     var w = el('<div class="stack"></div>');
-    w.appendChild(el('<div class="small" style="line-height:1.7">백업 파일(.json)을 고르면 지금 기록을 <b style="color:var(--warn)">전부 덮어씁니다.</b> 되돌릴 수 없습니다.</div>'));
+    w.appendChild(el('<div class="small" style="line-height:1.7">다른 기기에서 만든 백업 파일(.json)을 고르세요. <b style="color:var(--ink)">지금 기록은 지워지지 않습니다</b> — 없는 것만 채워 넣습니다.</div>'));
     var inp = el('<input type="file" accept="application/json,.json" style="font-size:13px">');
     w.appendChild(inp);
+    var box = el('<div class="stack" style="gap:11px"></div>');
+    w.appendChild(box);
+
     inp.onchange = function(){
       var f = inp.files && inp.files[0];
+      box.innerHTML = "";
       if(!f) return;
       var fr = new FileReader();
       fr.onload = function(){
+        var d;
         try{
           var p = JSON.parse(fr.result);
-          var d = p && p.data ? p.data : p;
+          d = (p && p.data) ? p.data : p;
           if(!d || !d.days) throw 0;
-          if(!confirm("지금 기록을 덮어씁니다. 계속할까요?")) return;
-          S = Object.assign(blank(), d); save(); close(); render();
-          toast("불러왔습니다. " + Object.keys(S.days).length + "일치.");
-        }catch(e){ toast("읽을 수 없는 파일입니다. 겨를에서 만든 백업 파일인지 확인해 주세요."); }
+        }catch(e){
+          box.appendChild(el('<div class="small" style="color:var(--warn)">읽을 수 없는 파일입니다. 겨를에서 만든 백업 파일인지 확인해 주세요.</div>'));
+          return;
+        }
+        /* 먼저 사본에 합쳐 보고, 무엇이 들어오는지 보여준 뒤에 확정합니다. */
+        var trial = JSON.parse(JSON.stringify(S));
+        var r = mergeInto(trial, d);
+        if(!r.added && !r.updated && !r.days && !r.ritual){
+          box.appendChild(el('<div class="small">이미 다 들어 있는 기록입니다. 새로 들어올 게 없습니다.</div>'));
+          return;
+        }
+        box.appendChild(el('<div class="card stack" style="gap:8px">'
+          + '<div class="spread"><span class="small">새 기록</span><span class="mono" style="font-size:17px">' + r.added + '개</span></div>'
+          + (r.updated ? '<div class="spread"><span class="small">더 최신으로 갱신</span><span class="mono" style="font-size:17px">' + r.updated + '개</span></div>' : '')
+          + (r.days ? '<div class="spread"><span class="small">새로 생기는 날짜</span><span class="mono" style="font-size:17px">' + r.days + '일</span></div>' : '')
+          + '</div>'));
+        var go = el('<button class="btn primary">합치기</button>');
+        go.onclick = function(){
+          var got = mergeInto(S, d);
+          if(d.child && d.child.name && S.child.name === "아이") S.child = d.child;
+          if(d.supplements && d.supplements.length && S.supplements.length <= 1) S.supplements = d.supplements;
+          S.sample = S.sample && !got.added;
+          save(); close(); render();
+          toast("합쳤습니다. 새 기록 " + got.added + "개.");
+        };
+        box.appendChild(go);
       };
       fr.readAsText(f);
     };
