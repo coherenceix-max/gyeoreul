@@ -1,4 +1,4 @@
-<title>나란히</title>
+<title>겨를</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap">
@@ -193,15 +193,76 @@ textarea::placeholder{color:var(--muted);opacity:.75}
 .orb span{font-family:var(--serif);font-size:15px;color:var(--water);letter-spacing:.08em}
 .breathe-cue{font-size:13.5px;color:var(--muted);text-align:center;line-height:1.7;max-width:290px;text-wrap:balance}
 .breathe-count{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em}
+
+/* ---------- 태그 제안 ---------- */
+.suggest{background:var(--surface-2);border-radius:12px;padding:12px 13px;display:flex;flex-direction:column;gap:9px}
+.suggest-q{font-size:12.5px;color:var(--muted);line-height:1.5}
+.suggest-q b{color:var(--ink);font-weight:500}
+
+/* ---------- 다시보기 ---------- */
+.memory{border:1px solid var(--line);border-radius:var(--r);background:linear-gradient(165deg,var(--me-wash),var(--surface) 68%);padding:16px;display:flex;flex-direction:column;gap:9px}
+.memory-when{display:flex;align-items:baseline;gap:8px}
+.memory-when .big{font-family:var(--serif);font-size:16px;color:var(--ink)}
+.memory-when .mono{font-size:11px;color:var(--muted)}
+.memory-text{font-family:var(--serif);font-size:15.5px;line-height:1.7;color:var(--ink-soft);white-space:pre-wrap}
+.memory-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+
+/* ---------- 검색 ---------- */
+.search-in{font:inherit;font-size:16px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);width:100%}
+.hit{border-left:2px solid var(--line);padding:2px 0 2px 13px;display:flex;flex-direction:column;gap:4px;cursor:pointer}
+.hit.me{border-color:var(--me)} .hit.kid{border-color:var(--kid)}
+.hit-meta{display:flex;gap:8px;font-size:11px;color:var(--muted)}
+.hit-text{font-family:var(--serif);font-size:14.5px;line-height:1.65;color:var(--ink-soft)}
+.hit mark{background:color-mix(in srgb,var(--warn) 32%,transparent);color:var(--ink);border-radius:3px;padding:0 2px}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.fchip{padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:12.5px;color:var(--muted)}
+.fchip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--ground)}
+
+/* ---------- 보관 · 책 ---------- */
+.keep-card{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:16px;display:flex;flex-direction:column;gap:11px}
+.keep-card h3{margin:0;font-family:var(--serif);font-size:17px;font-weight:400}
+.keep-card .kc-d{font-size:13px;color:var(--muted);line-height:1.65}
+.book-meter{display:flex;flex-direction:column;gap:7px}
+.book-bar{height:9px;border-radius:5px;background:var(--surface-2);overflow:hidden}
+.book-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--kid),var(--me));border-radius:5px;transition:width .5s}
+.book-nums{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)}
+.book-nums b{font-family:var(--mono);color:var(--ink);font-size:13px}
+.spine-sample{background:var(--surface-2);border-radius:10px;padding:14px 16px;font-family:var(--serif);display:flex;flex-direction:column;gap:6px}
+.spine-sample .ss-t{font-size:15px;color:var(--ink)}
+.spine-sample .ss-q{font-size:13.5px;color:var(--ink-soft);line-height:1.7}
+.spine-sample .ss-a{font-size:11px;color:var(--muted);font-family:var(--sans)}
+.adv{font-size:11.5px;color:var(--muted);line-height:1.6}
+details.adv-box{border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+details.adv-box>summary{padding:13px 15px;cursor:pointer;font-size:13.5px;color:var(--muted);list-style:none}
+details.adv-box>summary::-webkit-details-marker{display:none}
+details.adv-box>summary::after{content:" ▾";color:var(--muted)}
+details.adv-box[open]>summary::after{content:" ▴"}
+details.adv-box .adv-body{padding:0 15px 15px;display:flex;flex-direction:column;gap:11px;border-top:1px solid var(--line-soft);padding-top:13px}
+
+/* ---------- 잠금 ---------- */
+.lock{position:fixed;inset:0;z-index:80;background:var(--ground);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:30px}
+.lock .brand{font-size:27px}
+.lock-dots{display:flex;gap:11px}
+.lock-dot{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--muted)}
+.lock-dot.on{background:var(--ink);border-color:var(--ink)}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;width:min(268px,80vw)}
+.pad button{aspect-ratio:1.5;border-radius:13px;border:1px solid var(--line);background:var(--surface);font-family:var(--mono);font-size:19px;color:var(--ink)}
+.pad button.ghost{border-color:transparent;background:none;font-size:13px;font-family:var(--sans);color:var(--muted)}
+.lock-msg{font-size:13px;color:var(--muted);min-height:20px;text-align:center;line-height:1.6}
+.lock-msg.err{color:var(--warn)}
+.recovery{font-family:var(--mono);font-size:19px;letter-spacing:.14em;text-align:center;background:var(--surface-2);border-radius:11px;padding:15px;color:var(--ink)}
 </style>
 
 <div class="app">
   <header class="hdr">
     <div class="row" style="gap:10px;align-items:baseline">
-      <span class="brand">나란히</span>
+      <span class="brand">겨를</span>
       <span class="hdr-date" id="hdrDate"></span>
     </div>
-    <button class="hdr-btn" id="settingsBtn">설정</button>
+    <div class="row" style="gap:6px">
+      <button class="hdr-btn" id="searchBtn" aria-label="검색">찾기</button>
+      <button class="hdr-btn" id="settingsBtn">설정</button>
+    </div>
   </header>
   <main id="view"></main>
   <nav class="tabs" id="tabs"></nav>
@@ -218,7 +279,7 @@ var KEY = "naranhi.v1";
 var S = null;
 
 function blank(){
-  return { child:{name:"아이", birth:""}, supplements:["비타민D"], days:{}, lastExport:null, sample:false, seeded:false };
+  return { child:{name:"아이", birth:""}, supplements:["비타민D"], days:{}, lastExport:null, sample:false, seeded:false, pin:null, backupAsked:null };
 }
 function load(){
   try{
@@ -271,6 +332,37 @@ var ME_TAGS = [
 ];
 function topicLabel(id){ for(var i=0;i<KID_TOPICS.length;i++) if(KID_TOPICS[i].id===id) return KID_TOPICS[i].label; return id; }
 function meTagLabel(id){ for(var i=0;i<ME_TAGS.length;i++) if(ME_TAGS[i].id===id) return ME_TAGS[i].label; return id; }
+
+/* 쓴 글에서 주제를 알아채기 위한 사전. 외워서 고르는 게 아니라, 앱이 먼저 물어봅니다. */
+var KID_HINTS = {
+  tantrum:["떼","드러누","발버둥","소리 지","소리질","악을","짜증","성질","울고불고","폭발"],
+  sleep:["안 자","안자","잠들","재우","자려고","깼","깨서","새벽","밤에","눕히","졸려","잠"],
+  daycare:["어린이집","유치원","등원","하원","현관","가기 싫","안 간다","안 가겠"],
+  eating:["먹","밥","반찬","편식","뱉","입에 물","간식","식탁","국"],
+  peers:["친구","같이 놀","안 놀아","놀이터","싸웠","끼워","따돌"],
+  lying:["거짓말","안 했다고","아니라고","숨기","속였"],
+  sibling:["동생","형아","누나","오빠","언니","서로 때","둘이 싸"],
+  screen:["티비","tv","태블릿","유튜브","핸드폰","영상","게임","꺼야","끄니까"],
+  separation:["떨어지","안 떨어","엄마 어디","아빠 어디","불안","혼자 못","무섭다","무서워"],
+  good:["웃","처음으로","해냈","고맙","사랑","기특","선물","뿌듯","안아"]
+};
+var ME_HINTS = {
+  yelled:["소리 질","소리질","버럭","화냈","윽박","고함"],
+  guilt:["미안","죄책","후회","자책"],
+  drained:["지쳤","힘들","피곤","방전","한계","번아웃","벅차"],
+  alone:["혼자","커피","산책","나만의","조용히"],
+  partner:["남편","아내","와이프","신랑","배우자"],
+  work:["회사","업무","야근","일이","출근","프로젝트"]
+};
+function detect(text, dict){
+  var t = text.toLowerCase(), scored = [];
+  Object.keys(dict).forEach(function(id){
+    var n = 0;
+    dict[id].forEach(function(w){ if(t.indexOf(w.toLowerCase()) >= 0) n++; });
+    if(n) scored.push({id:id, n:n});
+  });
+  return scored.sort(function(a,b){ return b.n-a.n; }).slice(0,3).map(function(x){ return x.id; });
+}
 
 /* ==================== 참고자료 ==================== */
 var REFS = [
@@ -467,13 +559,13 @@ function openWrite(track, k){
       });
       wrap.appendChild(fWrap);
 
-      var tWrap = el('<div class="stack" style="gap:8px"><span class="eyebrow">무슨 일이 있었나요 <span style="text-transform:none;letter-spacing:0">(고르면 참고자료가 붙습니다)</span></span><div class="pills" id="tops"></div></div>');
+      var tWrap = el('<div class="stack" style="gap:8px"><span class="eyebrow">주제 <span style="text-transform:none;letter-spacing:0">· 안 골라도 됩니다. 쓰다 보면 제가 물어볼게요</span></span><div class="pills" id="tops"></div></div>');
       KID_TOPICS.forEach(function(t){
-        var b = el('<button class="pill k" aria-pressed="false">'+esc(t.label)+'</button>');
+        var b = el('<button class="pill k" data-id="'+t.id+'" aria-pressed="false">'+esc(t.label)+'</button>');
         b.onclick = function(){
           var i = picked.topics.indexOf(t.id);
           if(i>=0) picked.topics.splice(i,1); else picked.topics.push(t.id);
-          b.setAttribute("aria-pressed", i>=0 ? "false":"true");
+          syncPicked();
         };
         tWrap.querySelector("#tops").appendChild(b);
       });
@@ -494,11 +586,11 @@ function openWrite(track, k){
 
       var gWrap = el('<div class="stack" style="gap:8px"><span class="eyebrow">태그</span><div class="pills" id="mtags"></div></div>');
       ME_TAGS.forEach(function(t){
-        var b = el('<button class="pill m" aria-pressed="false">'+esc(t.label)+'</button>');
+        var b = el('<button class="pill m" data-id="'+t.id+'" aria-pressed="false">'+esc(t.label)+'</button>');
         b.onclick = function(){
           var i = picked.tags.indexOf(t.id);
           if(i>=0) picked.tags.splice(i,1); else picked.tags.push(t.id);
-          b.setAttribute("aria-pressed", i>=0 ? "false":"true");
+          syncPicked();
         };
         gWrap.querySelector("#mtags").appendChild(b);
       });
@@ -507,6 +599,42 @@ function openWrite(track, k){
 
     var ta = el('<textarea placeholder="'+(isKid ? "한 줄이어도 충분합니다." : "떠오르는 대로. 문장이 아니어도 괜찮습니다.")+'"></textarea>');
     wrap.appendChild(ta);
+
+    /* 쓰면 앱이 먼저 알아챕니다 — 태그를 외워서 고를 필요 없습니다 */
+    var sug = el('<div class="suggest" hidden><div class="suggest-q"></div><div class="pills"></div></div>');
+    wrap.appendChild(sug);
+
+    var HINTS = isKid ? KID_HINTS : ME_HINTS;
+    var labelOf = isKid ? topicLabel : meTagLabel;
+    function bucket(){ return isKid ? picked.topics : picked.tags; }
+
+    function syncPicked(){
+      var list = bucket();
+      Array.prototype.forEach.call(wrap.querySelectorAll(".pill[data-id]"), function(b){
+        b.setAttribute("aria-pressed", list.indexOf(b.getAttribute("data-id")) >= 0 ? "true" : "false");
+      });
+      renderSuggest();
+    }
+    var lastSig = null;
+    function renderSuggest(){
+      var txt = ta.value.trim();
+      var found = txt.length >= 6 ? detect(txt, HINTS).filter(function(id){ return bucket().indexOf(id) < 0; }) : [];
+      if(!found.length){ sug.hidden = true; lastSig = null; return; }
+      var sig = found.join(",");
+      sug.hidden = false;
+      if(sig === lastSig) return;
+      lastSig = sig;
+      sug.querySelector(".suggest-q").innerHTML = "이런 얘기 같은데, 맞나요? <b>안 골라도 됩니다.</b>";
+      var pw = sug.querySelector(".pills");
+      pw.innerHTML = "";
+      found.forEach(function(id){
+        var b = el('<button class="pill '+(isKid?"k":"m")+'">+ '+esc(labelOf(id))+'</button>');
+        b.onclick = function(){ bucket().push(id); syncPicked(); };
+        pw.appendChild(b);
+      });
+    }
+    var tmr = null;
+    ta.oninput = function(){ clearTimeout(tmr); tmr = setTimeout(renderSuggest, 350); };
 
     var save1 = el('<div class="btn-row" style="justify-content:flex-end"><button class="btn primary" style="flex:1">저장</button></div>');
     save1.querySelector("button").onclick = function(){
@@ -552,8 +680,8 @@ function viewToday(){
     };
     out.appendChild(n);
   } else if(S.lastExport && daysAgo(S.lastExport) >= 14){
-    var n2 = el('<div class="notice"><div>마지막 내보내기가 <b>'+daysAgo(S.lastExport)+'일 전</b>입니다. 기록은 이 기기 안에만 있습니다.</div><button>내보내기</button></div>');
-    n2.querySelector("button").onclick = function(){ TAB="export"; render(); };
+    var n2 = el('<div class="notice"><div>마지막으로 보관한 지 <b>'+daysAgo(S.lastExport)+'일</b>이 지났습니다. 기록은 이 기기 안에만 있습니다.</div><button>보관하기</button></div>');
+    n2.querySelector("button").onclick = function(){ TAB="keep"; render(); };
     out.appendChild(n2);
   }
 
@@ -597,16 +725,23 @@ function viewToday(){
   grid.appendChild(bMe); grid.appendChild(bKid);
   out.appendChild(grid);
 
+  /* 다시 보기 — 작년 오늘, 없으면 지난 기록 하나 */
+  var mem = memoryCard(k);
+  if(mem) out.appendChild(mem);
+
   /* 오늘의 척추 */
   var entries = [];
   (d.me||[]).forEach(function(e){ entries.push({track:"me", e:e}); });
   (d.kid||[]).forEach(function(e){ entries.push({track:"kid", e:e}); });
   entries.sort(function(a,b){ return a.e.t < b.e.t ? -1 : 1; });
 
-  var sec = el('<div class="stack" style="gap:11px"><span class="eyebrow">오늘 · '+esc(fmtKo(k))+'</span></div>');
+  var sec = el('<div class="stack" style="gap:11px"><div class="spread"><span class="eyebrow">오늘 · '+esc(fmtKo(k))+'</span></div></div>');
   if(!entries.length){
     sec.appendChild(el('<div class="empty">아직 오늘은 비어 있습니다.<br>한 줄이면 충분합니다.</div>'));
   } else {
+    var shareToday = el('<button class="small" style="text-decoration:underline;text-underline-offset:3px">보내기</button>');
+    shareToday.onclick = function(){ openShare(k); };
+    sec.querySelector(".spread").appendChild(shareToday);
     sec.appendChild(buildSpine(entries));
   }
   out.appendChild(sec);
@@ -712,6 +847,14 @@ function viewFlow(){
   cal.appendChild(el('<div class="spread small"><span>연속 <b class="mono" style="color:var(--ink)">'+streak+'</b>일</span><span>기록 <b class="mono" style="color:var(--ink)">'+totalEntries+'</b>개 · '+keys.length+'일치</span></div>'));
   out.appendChild(cal);
 
+  /* 책까지 얼마나 */
+  var bk = el('<div class="card stack" style="gap:12px"><div class="spread"><span class="eyebrow">책까지</span></div></div>');
+  var bkGo = el('<button class="small" style="text-decoration:underline;text-underline-offset:3px">보기</button>');
+  bkGo.onclick = function(){ TAB="keep"; render(); window.scrollTo(0,0); };
+  bk.querySelector(".spread").appendChild(bkGo);
+  bk.appendChild(bookMeter());
+  out.appendChild(bk);
+
   /* 인사이트 */
   var ins = el('<div class="card stack" style="gap:15px"><span class="eyebrow">보이기 시작한 것</span></div>');
   var found = computeInsights(keys);
@@ -751,7 +894,10 @@ function viewFlow(){
       (d.kid||[]).forEach(function(e){ es.push({track:"kid", e:e}); });
       if(!es.length) return;
       es.sort(function(a,b){ return a.e.t<b.e.t?-1:1; });
-      var blk = el('<div class="card stack" style="gap:11px"><div class="spread"><span class="mono small">'+esc(k)+'</span><span class="small">'+esc(fmtKo(k).replace(/^\d+월 \d+일 /,""))+(d.ritual&&d.ritual.sleep?' · 잠 '+d.ritual.sleep+'h':'')+'</span></div></div>');
+      var blk = el('<div class="card stack" style="gap:11px"><div class="spread"><span class="small"><span class="mono">'+esc(k)+'</span> · '+esc(fmtKo(k).replace(/^\d+월 \d+일 /,""))+(d.ritual&&d.ritual.sleep?' · 잠 '+d.ritual.sleep+'h':'')+'</span></div></div>');
+      var shr = el('<button class="small" style="text-decoration:underline;text-underline-offset:3px;white-space:nowrap">보내기</button>');
+      shr.onclick = function(){ openShare(k); };
+      blk.querySelector(".spread").appendChild(shr);
       blk.appendChild(buildSpine(es));
       rec.appendChild(blk);
     });
@@ -875,7 +1021,7 @@ function dayMd(k){
 
   L.push("---");
   L.push("date: " + k);
-  L.push("tags: [나란히]");
+  L.push("tags: [겨를]");
   if(moods.length) L.push("mood: " + (moods.reduce(function(a,b){return a+b;},0)/moods.length).toFixed(1));
   if(d.ritual && d.ritual.sleep) L.push("sleep: " + d.ritual.sleep);
   if(topics.length) L.push("topics: [" + topics.map(topicLabel).join(", ") + "]");
@@ -927,78 +1073,99 @@ function allMd(){
 }
 
 var DL = null;
-claude_use("downloads").then(function(x){ DL = x; if(TAB==="export") render(); });
+claude_use("downloads").then(function(x){ DL = x; if(TAB==="keep") render(); });
 function claude_use(name){
   try{ if(window.claude && window.claude.use) return window.claude.use(name); }catch(e){}
   return Promise.resolve(null);
 }
 
-function viewExport(){
+function viewKeep(){
   var out = document.createDocumentFragment();
-  var keys = Object.keys(S.days).sort().filter(function(k){
-    var d=S.days[k]; return (d.me&&d.me.length)||(d.kid&&d.kid.length);
-  });
+  var keys = Object.keys(S.days).sort().filter(hasEntries);
 
-  out.appendChild(el('<div class="stack" style="gap:7px"><span class="eyebrow">옵시디언으로 내보내기</span><div class="small" style="line-height:1.7">하루에 노트 하나씩, 프론트매터가 붙은 마크다운으로 나갑니다. ZIP을 풀어서 볼트에 넣으면 데일리 노트로 그대로 붙습니다.</div></div>'));
+  /* 1. 안전하게 보관하기 */
+  var c1 = el('<div class="keep-card"><h3>안전하게 보관하기</h3>'
+    + '<div class="kc-d">기록은 이 폰 안에만 있습니다. 파일 하나로 통째로 저장해 두면, 폰을 바꾸거나 실수로 지워도 그대로 되살릴 수 있습니다.</div></div>');
+  c1.appendChild(el('<div class="spread"><span class="small">기록 '+keys.length+'일치</span><span class="small">마지막 보관 '
+    + (S.lastExport ? '<b class="mono" style="color:'+(daysAgo(S.lastExport)>=14?"var(--warn)":"var(--ink)")+'">'+daysAgo(S.lastExport)+'일 전</b>' : '<b style="color:var(--warn)">없음</b>') + '</span></div>'));
+  var r1 = el('<div class="btn-row"></div>');
+  var bkBtn = el('<button class="btn primary" style="flex:1">지금 보관하기</button>');
+  bkBtn.onclick = doBackup;
+  r1.appendChild(bkBtn);
+  var rsBtn = el('<button class="btn">불러오기</button>');
+  rsBtn.onclick = openRestore;
+  r1.appendChild(rsBtn);
+  c1.appendChild(r1);
+  out.appendChild(c1);
 
-  var stat = el('<div class="card spread"><div class="stack" style="gap:3px"><span class="small">내보낼 기록</span><span class="mono" style="font-size:19px">'+keys.length+'일</span></div>'
-    + '<div class="stack" style="gap:3px;text-align:right"><span class="small">마지막 내보내기</span><span class="mono" style="font-size:19px">'+(S.lastExport ? daysAgo(S.lastExport)+"일 전" : "없음")+'</span></div></div>');
-  out.appendChild(stat);
-
-  var btns = el('<div class="btn-row"></div>');
-  var zipBtn = el('<button class="btn primary" style="flex:1">ZIP으로 내려받기</button>');
-  zipBtn.onclick = function(){ doZip(keys, zipBtn); };
-  btns.appendChild(zipBtn);
-  var copyBtn = el('<button class="btn">전체 복사</button>');
-  copyBtn.onclick = function(){
-    var md = allMd();
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(md).then(function(){ toast("클립보드에 복사했습니다. 옵시디언에 붙여넣으세요."); },
-        function(){ toast("복사에 실패했습니다. 아래 미리보기에서 직접 선택해 주세요."); });
-    } else { toast("이 브라우저는 복사를 지원하지 않습니다. 아래에서 직접 선택해 주세요."); }
-  };
-  btns.appendChild(copyBtn);
-  out.appendChild(btns);
-  if(!DL){
-    out.appendChild(el('<div class="small" style="line-height:1.6">파일 저장 권한이 아직 안 붙었습니다. 버튼을 누르면 물어보고, 그래도 안 되면 <b>전체 복사</b>를 쓰세요.</div>'));
-  }
-
+  /* 2. 보내기 */
+  var c2 = el('<div class="keep-card"><h3>하루를 보내기</h3>'
+    + '<div class="kc-d">그날 기록을 카카오톡·메시지·메일로 보냅니다. 아이 이야기만 나가고, 나의 일기는 따로 켜야 포함됩니다.</div></div>');
   if(keys.length){
     var last = keys[keys.length-1];
-    out.appendChild(el('<div class="stack" style="gap:8px"><span class="eyebrow">미리보기 · '+esc(last)+'.md</span><div class="md-prev">'+esc(dayMd(last))+'</div></div>'));
-  } else {
-    out.appendChild(el('<div class="empty">아직 내보낼 기록이 없습니다.</div>'));
-  }
+    var sb2 = el('<button class="btn" style="width:100%">가장 최근 하루 보내기 · '+esc(last)+'</button>');
+    sb2.onclick = function(){ openShare(last); };
+    c2.appendChild(sb2);
+    c2.appendChild(el('<div class="adv">흐름 탭의 각 날짜를 눌러도 그날을 보낼 수 있습니다.</div>'));
+  } else c2.appendChild(el('<div class="adv">기록이 쌓이면 여기서 보낼 수 있습니다.</div>'));
+  out.appendChild(c2);
 
-  out.appendChild(el('<div class="disclaimer">기록은 이 브라우저 안에만 저장됩니다. 서버로 가지 않는 대신, 브라우저 데이터를 지우면 함께 사라집니다. 2주에 한 번은 내보내 두세요.</div>'));
+  /* 3. 책 */
+  var n = entryCount();
+  var c3 = el('<div class="keep-card"><h3>책으로 만들기</h3>'
+    + '<div class="kc-d">사진책은 이미 많습니다. 이건 아이가 한 말과 당신의 문장만 모은 책입니다. 다 모이면 인쇄용 파일을 만들어 드립니다.</div></div>');
+  c3.appendChild(bookMeter());
+  var qs = [];
+  Object.keys(S.days).sort().forEach(function(k){
+    (S.days[k].kid||[]).forEach(function(e){ if(e.text && e.text.length<=70) qs.push({t:e.text,k:k}); });
+  });
+  if(qs.length){
+    var q = qs[qs.length-1];
+    c3.appendChild(el('<div class="spine-sample"><div class="ss-t">남겨진 말</div><div class="ss-q">“'+esc(q.t)+'”</div><div class="ss-a">'+esc(q.k)+'</div></div>'));
+  }
+  var bb = el('<button class="btn'+(n>=BOOK_GOAL?" primary":"")+'" style="width:100%">'+(n>=BOOK_GOAL?"인쇄용 파일 만들기":"지금까지 분량으로 미리 만들어 보기")+'</button>');
+  bb.onclick = function(){
+    if(!keys.length){ toast("아직 기록이 없습니다."); return; }
+    doSave("겨를-책-" + todayKey().replace(/-/g,"") + ".html", new Blob([bookHtml()], {type:"text/html"}), function(){
+      toast("파일을 브라우저로 열고 인쇄 → PDF로 저장을 고르세요.");
+    });
+  };
+  c3.appendChild(bb);
+  c3.appendChild(el('<div class="adv">받은 파일을 브라우저에서 열고 <b>인쇄 → PDF로 저장</b>하면 A5 판형 PDF가 됩니다. 그 PDF를 스냅스·부크크 같은 인쇄 서비스에 올리면 실물 책이 됩니다.</div>'));
+  out.appendChild(c3);
+
+  /* 4. 고급 — 옵시디언 */
+  var adv = el('<details class="adv-box"><summary>옵시디언으로 보내기</summary><div class="adv-body"></div></details>');
+  var ab = adv.querySelector(".adv-body");
+  ab.appendChild(el('<div class="adv">하루에 노트 하나씩, 프론트매터(<span class="mono">date · mood · sleep · topics</span>)가 붙은 마크다운으로 나갑니다. ZIP을 풀어 볼트에 넣으면 데일리 노트로 그대로 붙습니다.</div>'));
+  var r4 = el('<div class="btn-row"></div>');
+  var zipBtn = el('<button class="btn" style="flex:1">마크다운 ZIP</button>');
+  zipBtn.onclick = function(){ doZip(keys, zipBtn); };
+  r4.appendChild(zipBtn);
+  var copyBtn = el('<button class="btn">전체 복사</button>');
+  copyBtn.onclick = function(){ copyFallback(allMd()); };
+  r4.appendChild(copyBtn);
+  ab.appendChild(r4);
+  if(keys.length) ab.appendChild(el('<div class="md-prev">'+esc(dayMd(keys[keys.length-1]))+'</div>'));
+  out.appendChild(adv);
+
+  out.appendChild(el('<div class="disclaimer">기록은 이 브라우저 안에만 저장되고 서버로 가지 않습니다. 대신 브라우저 데이터를 지우면 함께 사라지니, 2주에 한 번은 보관해 두세요.</div>'));
   return out;
 }
 
 function doZip(keys, btn){
   if(!keys.length){ toast("내보낼 기록이 없습니다."); return; }
   if(typeof JSZip === "undefined"){ toast("압축 도구를 불러오지 못했습니다. 전체 복사를 써 주세요."); return; }
+  var label = btn.textContent;
   btn.disabled = true; btn.textContent = "만드는 중…";
-  var zip = new JSZip(), folder = zip.folder("나란히");
+  function restore(){ btn.disabled = false; btn.textContent = label; }
+  var zip = new JSZip(), folder = zip.folder("겨를");
   keys.forEach(function(k){ folder.file(k + ".md", dayMd(k)); });
   zip.generateAsync({type:"blob"}).then(function(blob){
-    var fname = "나란히-" + todayKey().replace(/-/g,"") + ".zip";
-    if(DL){
-      return DL.save({filename:fname, data:blob}).then(function(){
-        S.lastExport = todayKey(); save(); toast("내보냈습니다."); render();
-      }, function(err){
-        if(err && err.code === "declined") toast("취소했습니다.");
-        else { toast("저장하지 못했습니다. 전체 복사를 써 주세요."); }
-        btn.disabled=false; btn.textContent="ZIP으로 내려받기";
-      });
-    }
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a"); a.href = url; a.download = fname;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
-    S.lastExport = todayKey(); save(); render();
+    doSave("겨를-" + todayKey().replace(/-/g,"") + ".zip", blob, function(){ toast("내보냈습니다."); });
+    restore();
   }).catch(function(){
-    toast("압축에 실패했습니다. 전체 복사를 써 주세요.");
-    btn.disabled=false; btn.textContent="ZIP으로 내려받기";
+    toast("압축에 실패했습니다. 전체 복사를 써 주세요."); restore();
   });
 }
 
@@ -1019,7 +1186,11 @@ function openSettings(){
     };
     wrap.appendChild(b);
 
-    wrap.appendChild(el('<div class="disclaimer" style="padding-top:6px">기록은 이 브라우저에만 저장됩니다. 브라우저 데이터를 지우면 함께 사라지니, 내보내기 탭에서 주기적으로 백업하세요.</div>'));
+    var pinBtn = el('<button class="btn">'+(S.pin ? "잠금 꺼짐으로 바꾸기 · 현재 켜짐" : "잠금 켜기 · 네 자리 숫자")+'</button>');
+    pinBtn.onclick = function(){ close(); setTimeout(openPinSetup, 180); };
+    wrap.appendChild(pinBtn);
+
+    wrap.appendChild(el('<div class="disclaimer" style="padding-top:6px">기록은 이 브라우저에만 저장됩니다. 브라우저 데이터를 지우면 함께 사라지니, 보관 탭에서 주기적으로 파일로 남겨 두세요.</div>'));
 
     var danger = el('<button class="btn" style="color:var(--warn);border-color:var(--warn)">모든 기록 지우기</button>');
     danger.onclick = function(){
@@ -1079,12 +1250,388 @@ function seed(){
   return days;
 }
 
+/* ==================== 다시 보기 ==================== */
+function hasEntries(k){ var d=S.days[k]; return !!(d && ((d.me&&d.me.length)||(d.kid&&d.kid.length))); }
+function memoryPick(k){
+  var d0 = parseKey(k), y, kk;
+  for(y=1; y<=10; y++){
+    kk = key(new Date(d0.getFullYear()-y, d0.getMonth(), d0.getDate()));
+    if(hasEntries(kk)) return { k:kk, label: y===1 ? "작년 오늘" : y+"년 전 오늘" };
+  }
+  for(var m=1; m<=6; m++){
+    kk = key(new Date(d0.getFullYear(), d0.getMonth()-m, d0.getDate()));
+    if(hasEntries(kk)) return { k:kk, label: m===1 ? "한 달 전 오늘" : m+"개월 전 오늘" };
+  }
+  var pool = Object.keys(S.days).sort().filter(function(x){ return x < k && daysAgo(x) >= 30 && hasEntries(x); });
+  if(!pool.length) pool = Object.keys(S.days).sort().filter(function(x){ return x < k && daysAgo(x) >= 6 && hasEntries(x); });
+  if(pool.length){ var pk = pool[seedIdx(k, pool.length)]; return { k:pk, label: daysAgo(pk)+"일 전" }; }
+  return null;
+}
+function memoryCard(k){
+  var m = memoryPick(k);
+  if(!m) return null;
+  var d = S.days[m.k];
+  var pick = null;
+  (d.kid||[]).forEach(function(e){ if(e.text && !pick) pick = {e:e, who:S.child.name}; });
+  if(!pick) (d.me||[]).forEach(function(e){ if(e.text && !pick) pick = {e:e, who:"나"}; });
+  if(!pick) return null;
+  var card = el('<div class="memory"></div>');
+  card.appendChild(el('<div class="memory-when"><span class="big">'+esc(m.label)+'</span><span class="mono">'+esc(m.k)+'</span></div>'));
+  card.appendChild(el('<div class="memory-text">'+esc(pick.e.text)+'</div>'));
+  var foot = el('<div class="memory-foot"><span class="small">'+esc(pick.who)+(pick.e.feel?" · "+esc(pick.e.feel):"")+'</span></div>');
+  var b = el('<button class="small" style="text-decoration:underline;text-underline-offset:3px">그날 전부 보기</button>');
+  b.onclick = function(){ openDay(m.k); };
+  foot.appendChild(b);
+  card.appendChild(foot);
+  return card;
+}
+function openDay(k){
+  openSheet(fmtKo(k), function(sheet){
+    var d = S.days[k], es = [];
+    (d.me||[]).forEach(function(e){ es.push({track:"me", e:e}); });
+    (d.kid||[]).forEach(function(e){ es.push({track:"kid", e:e}); });
+    es.sort(function(a,b){ return a.e.t<b.e.t?-1:1; });
+    var w = el('<div class="stack"></div>');
+    w.appendChild(el('<div class="small mono">'+esc(k)+(d.ritual&&d.ritual.sleep?' · 잠 '+d.ritual.sleep+'h':'')+'</div>'));
+    if(es.length) w.appendChild(buildSpine(es));
+    else w.appendChild(el('<div class="empty">기록이 없는 날입니다.</div>'));
+    var sb = el('<button class="btn">이 날을 보내기</button>');
+    sb.onclick = function(){ openShare(k); };
+    w.appendChild(sb);
+    sheet.appendChild(w);
+  });
+}
+
+/* ==================== 하루 보내기 (카톡 · 메일) ==================== */
+function dayPlain(k, opts){
+  var d = S.days[k], L = [];
+  L.push(fmtKo(k) + " · " + S.child.name);
+  L.push("");
+  (d.kid||[]).forEach(function(e){
+    var h = e.t + (e.feel ? "  " + e.feel : "");
+    L.push(h);
+    if(e.text) L.push(e.text);
+    L.push("");
+  });
+  if(opts && opts.includeMe && (d.me||[]).length){
+    L.push("— 나의 기록 —");
+    L.push("");
+    d.me.forEach(function(e){
+      L.push(e.t + (e.mood ? "  기분 "+e.mood+"/5" : ""));
+      if(e.text) L.push(e.text);
+      L.push("");
+    });
+  }
+  L.push("겨를에서 보냄");
+  return L.join("\n").replace(/\n{3,}/g, "\n\n");
+}
+function openShare(k){
+  openSheet("이 날을 보내기", function(sheet, close){
+    var d = S.days[k];
+    var opts = { includeMe:false };
+    var w = el('<div class="stack"></div>');
+    w.appendChild(el('<div class="small" style="line-height:1.7">카카오톡, 메시지, 메일 — 폰의 공유 메뉴가 열립니다. <b style="color:var(--ink)">나의 일기는 기본으로 빠집니다.</b></div>'));
+
+    if((d.me||[]).length){
+      var t = el('<div class="filters"><button class="fchip" aria-pressed="false">나의 기록도 함께 보내기</button></div>');
+      var tb = t.querySelector("button");
+      tb.onclick = function(){
+        opts.includeMe = !opts.includeMe;
+        tb.setAttribute("aria-pressed", opts.includeMe?"true":"false");
+        prev.textContent = dayPlain(k, opts);
+      };
+      w.appendChild(t);
+    }
+    var prev = el('<div class="md-prev" style="white-space:pre-wrap;font-family:var(--serif);font-size:13.5px"></div>');
+    prev.textContent = dayPlain(k, opts);
+    w.appendChild(el('<div class="stack" style="gap:7px"><span class="eyebrow">보낼 내용</span></div>')).appendChild(prev);
+
+    var row = el('<div class="btn-row"></div>');
+    var sb = el('<button class="btn primary" style="flex:1">보내기</button>');
+    sb.onclick = function(){
+      var text = dayPlain(k, opts);
+      if(navigator.share){
+        navigator.share({ text:text }).then(function(){ close(); },
+          function(err){ if(err && err.name !== "AbortError") copyFallback(text); });
+      } else copyFallback(text);
+    };
+    var cb = el('<button class="btn">복사</button>');
+    cb.onclick = function(){ copyFallback(dayPlain(k, opts)); };
+    row.appendChild(sb); row.appendChild(cb);
+    w.appendChild(row);
+    sheet.appendChild(w);
+  });
+}
+function copyFallback(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){ toast("복사했습니다. 카톡에 붙여넣으세요."); },
+      function(){ toast("복사에 실패했습니다. 위 내용을 직접 선택해 주세요."); });
+  } else toast("이 브라우저는 복사를 지원하지 않습니다. 위 내용을 직접 선택해 주세요.");
+}
+
+/* ==================== 찾기 ==================== */
+function openSearch(){
+  openSheet("찾기", function(sheet){
+    var w = el('<div class="stack"></div>');
+    var inp = el('<input class="search-in" placeholder="한 단어면 됩니다 — 자전거, 브로콜리, 서윤" autocomplete="off">');
+    w.appendChild(inp);
+    var filt = el('<div class="filters"></div>');
+    var mode = { track:"all", topic:null };
+    [["all","전체"],["kid",S.child.name],["me","나"]].forEach(function(f){
+      var b = el('<button class="fchip" aria-pressed="'+(mode.track===f[0]?"true":"false")+'">'+esc(f[1])+'</button>');
+      b.onclick = function(){
+        mode.track = f[0];
+        Array.prototype.forEach.call(filt.querySelectorAll(".fchip"), function(x){ x.setAttribute("aria-pressed","false"); });
+        b.setAttribute("aria-pressed","true"); run();
+      };
+      filt.appendChild(b);
+    });
+    w.appendChild(filt);
+    var res = el('<div class="stack" style="gap:14px"></div>');
+    w.appendChild(res);
+    sheet.appendChild(w);
+
+    function run(){
+      var q = inp.value.trim().toLowerCase();
+      res.innerHTML = "";
+      if(!q){
+        res.appendChild(el('<div class="empty">기억나는 단어 하나면 찾아집니다.<br>“처음”, “울었”, “고맙” 같은 것도 됩니다.</div>'));
+        return;
+      }
+      var hits = [];
+      Object.keys(S.days).sort().reverse().forEach(function(k){
+        var d = S.days[k];
+        ["kid","me"].forEach(function(tr){
+          if(mode.track !== "all" && mode.track !== tr) return;
+          (d[tr]||[]).forEach(function(e){
+            var hay = (e.text||"") + " " + (e.feel||"") + " " +
+              ((tr==="kid" ? (e.topics||[]).map(topicLabel) : (e.tags||[]).map(meTagLabel)).join(" "));
+            if(hay.toLowerCase().indexOf(q) >= 0) hits.push({k:k, tr:tr, e:e});
+          });
+        });
+      });
+      if(!hits.length){ res.appendChild(el('<div class="empty">“'+esc(inp.value.trim())+'”이(가) 들어간 기록이 없습니다.</div>')); return; }
+      res.appendChild(el('<div class="small mono">'+hits.length+'개</div>'));
+      hits.slice(0,60).forEach(function(h){
+        var raw = h.e.text || "";
+        var i = raw.toLowerCase().indexOf(q);
+        var html;
+        if(i >= 0){
+          var s = Math.max(0, i-40);
+          html = (s>0?"…":"") + esc(raw.slice(s,i)) + "<mark>" + esc(raw.substr(i, q.length)) + "</mark>" + esc(raw.slice(i+q.length, i+q.length+90)) + (raw.length > i+q.length+90 ? "…" : "");
+        } else html = esc(raw.slice(0,110));
+        var row = el('<div class="hit '+h.tr+'"><div class="hit-meta"><span class="mono">'+esc(h.k)+'</span><span>'+esc(h.tr==="kid"?S.child.name:"나")+'</span><span>'+esc(fmtKo(h.k).replace(/^\d+월 \d+일 /,""))+'</span></div><div class="hit-text">'+html+'</div></div>');
+        row.onclick = function(){ openDay(h.k); };
+        res.appendChild(row);
+      });
+    }
+    var st = null;
+    inp.oninput = function(){ clearTimeout(st); st = setTimeout(run, 180); };
+    run();
+  });
+}
+
+/* ==================== 책 ==================== */
+var BOOK_GOAL = 100;
+function entryCount(){
+  return Object.keys(S.days).reduce(function(a,k){
+    var d = S.days[k];
+    return a + (d.me?d.me.filter(function(e){return e.text;}).length:0) + (d.kid?d.kid.filter(function(e){return e.text;}).length:0);
+  }, 0);
+}
+function bookMeter(){
+  var n = entryCount(), pct = Math.min(100, Math.round(n/BOOK_GOAL*100));
+  var m = el('<div class="book-meter"><div class="book-bar"><i style="width:'+pct+'%"></i></div>'
+    + '<div class="book-nums"><span>기록 <b>'+n+'</b>개</span><span>'
+    + (n>=BOOK_GOAL ? "책 한 권 분량이 모였습니다" : "책 한 권까지 <b>"+(BOOK_GOAL-n)+"</b>개")
+    + '</span></div></div>');
+  return m;
+}
+function bookHtml(){
+  var keys = Object.keys(S.days).sort().filter(hasEntries);
+  var first = keys[0] || todayKey(), last = keys[keys.length-1] || todayKey();
+  var quotes = [], body = [];
+  keys.forEach(function(k){
+    var d = S.days[k], parts = [];
+    (d.kid||[]).forEach(function(e){
+      if(!e.text) return;
+      parts.push('<div class="e k"><div class="m">'+esc(S.child.name)+(e.feel?' · '+esc(e.feel):'')+'</div><p>'+esc(e.text)+'</p></div>');
+      if(e.text.length <= 70) quotes.push({t:e.text, k:k});
+    });
+    (d.me||[]).forEach(function(e){
+      if(!e.text) return;
+      parts.push('<div class="e m"><div class="m">나'+(e.mood?' · 기분 '+e.mood:'')+'</div><p>'+esc(e.text)+'</p></div>');
+    });
+    if(parts.length) body.push('<section><h2>'+esc(k)+' <small>'+esc(fmtKo(k))+'</small></h2>'+parts.join("")+'</section>');
+  });
+  var qPick = quotes.slice(-14);
+  return '<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>겨를 · '+esc(S.child.name)+'</title>'
+    + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@300;400&display=swap">'
+    + '<style>'
+    + '@page{size:A5;margin:17mm 15mm}'
+    + 'body{font-family:"Gowun Batang",serif;color:#1b1f1c;background:#fff;margin:0;line-height:1.85;font-size:11pt}'
+    + '.cover{height:96vh;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px;text-align:center;page-break-after:always}'
+    + '.cover h1{font-size:34pt;margin:0;letter-spacing:.14em;font-weight:400}'
+    + '.cover .sub{font-family:"IBM Plex Sans KR",sans-serif;font-size:10pt;color:#6b766e;letter-spacing:.05em}'
+    + '.cover .rule{width:44px;height:1px;background:#c3ccc5}'
+    + '.quotes{page-break-after:always;padding-top:8mm}'
+    + '.quotes h3{font-family:"IBM Plex Sans KR",sans-serif;font-size:9pt;letter-spacing:.18em;color:#6b766e;font-weight:400;margin:0 0 10mm}'
+    + '.q{margin:0 0 7mm;font-size:13pt;line-height:1.75}'
+    + '.q span{display:block;font-family:"IBM Plex Sans KR",sans-serif;font-size:8pt;color:#8d968f;margin-top:2mm}'
+    + 'section{page-break-inside:avoid;margin:0 0 9mm}'
+    + 'h2{font-family:"IBM Plex Sans KR",sans-serif;font-size:9.5pt;font-weight:400;color:#4e7a5c;letter-spacing:.06em;border-bottom:1px solid #e2e8e3;padding-bottom:2mm;margin:0 0 4mm}'
+    + 'h2 small{color:#9aa49c;font-size:8pt;margin-left:4px}'
+    + '.e{margin:0 0 4mm}'
+    + '.e .m{font-family:"IBM Plex Sans KR",sans-serif;font-size:7.5pt;color:#8d968f;letter-spacing:.04em;margin-bottom:1mm}'
+    + '.e p{margin:0;white-space:pre-wrap}'
+    + '.e.m p{color:#3f3a63}'
+    + '.tip{font-family:"IBM Plex Sans KR",sans-serif;font-size:8.5pt;color:#6b766e;background:#f2f5f2;padding:4mm;border-radius:3mm;margin:0 0 8mm}'
+    + '@media print{.tip{display:none}}'
+    + '</style></head><body>'
+    + '<div class="tip">이 파일을 브라우저에서 열고 <b>인쇄 &rarr; PDF로 저장</b>을 고르면 책 한 권이 됩니다. 이 안내문은 인쇄되지 않습니다.</div>'
+    + '<div class="cover"><div class="sub">'+esc(first)+' — '+esc(last)+'</div><h1>겨를</h1><div class="rule"></div>'
+    + '<div class="sub">'+esc(S.child.name)+'와(과) 나의 날들</div></div>'
+    + (qPick.length ? '<div class="quotes"><h3>남겨진 말</h3>'
+        + qPick.map(function(q){ return '<p class="q">“'+esc(q.t)+'”<span>'+esc(q.k)+'</span></p>'; }).join("") + '</div>' : '')
+    + body.join("")
+    + '</body></html>';
+}
+
+/* ==================== 백업 · 복원 ==================== */
+function backupBlob(){
+  return new Blob([JSON.stringify({ app:"gyeoreul", v:1, at:new Date().toISOString(), data:S }, null, 1)], {type:"application/json"});
+}
+function doSave(filename, data, after){
+  if(DL){
+    DL.save({filename:filename, data:data}).then(function(){ if(after) after(); },
+      function(err){ if(err && err.code === "declined") toast("취소했습니다."); else toast("저장하지 못했습니다."); });
+    return;
+  }
+  var blob = (data instanceof Blob) ? data : new Blob([data], {type:"text/plain"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a"); a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+  if(after) after();
+}
+function doBackup(){
+  doSave("겨를-백업-" + todayKey().replace(/-/g,"") + ".json", backupBlob(), function(){
+    S.lastExport = todayKey(); save(); toast("백업했습니다."); render();
+  });
+}
+function openRestore(){
+  openSheet("백업 불러오기", function(sheet, close){
+    var w = el('<div class="stack"></div>');
+    w.appendChild(el('<div class="small" style="line-height:1.7">백업 파일(.json)을 고르면 지금 기록을 <b style="color:var(--warn)">전부 덮어씁니다.</b> 되돌릴 수 없습니다.</div>'));
+    var inp = el('<input type="file" accept="application/json,.json" style="font-size:13px">');
+    w.appendChild(inp);
+    inp.onchange = function(){
+      var f = inp.files && inp.files[0];
+      if(!f) return;
+      var fr = new FileReader();
+      fr.onload = function(){
+        try{
+          var p = JSON.parse(fr.result);
+          var d = p && p.data ? p.data : p;
+          if(!d || !d.days) throw 0;
+          if(!confirm("지금 기록을 덮어씁니다. 계속할까요?")) return;
+          S = Object.assign(blank(), d); save(); close(); render();
+          toast("불러왔습니다. " + Object.keys(S.days).length + "일치.");
+        }catch(e){ toast("읽을 수 없는 파일입니다. 겨를에서 만든 백업 파일인지 확인해 주세요."); }
+      };
+      fr.readAsText(f);
+    };
+    sheet.appendChild(w);
+  });
+}
+
+/* ==================== 잠금 ==================== */
+function hash(s){ var h=5381; for(var i=0;i<s.length;i++){ h=((h<<5)+h+s.charCodeAt(i))>>>0; } return String(h); }
+function randCode(){
+  var A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789", o="";
+  for(var i=0;i<8;i++){ o += A[Math.floor(Math.random()*A.length)]; if(i===3) o += "-"; }
+  return o;
+}
+function lockGate(done){
+  if(!S.pin){ done(); return; }
+  var buf = "";
+  var g = el('<div class="lock"><span class="brand">겨를</span><div class="lock-dots"></div><div class="lock-msg">잠금을 풀어 주세요</div><div class="pad"></div></div>');
+  var dots = g.querySelector(".lock-dots"), msg = g.querySelector(".lock-msg"), pad = g.querySelector(".pad");
+  function paint(){
+    dots.innerHTML = "";
+    for(var i=0;i<4;i++) dots.appendChild(el('<span class="lock-dot'+(i<buf.length?" on":"")+'"></span>'));
+  }
+  function press(n){
+    if(buf.length >= 4) return;
+    buf += n; paint();
+    if(buf.length === 4){
+      setTimeout(function(){
+        if(hash(buf) === S.pin.h){ g.remove(); done(); }
+        else { msg.textContent = "다시 시도해 주세요"; msg.className="lock-msg err"; buf=""; paint(); }
+      }, 120);
+    }
+  }
+  ["1","2","3","4","5","6","7","8","9"].forEach(function(n){
+    var b = el('<button>'+n+'</button>'); b.onclick = function(){ press(n); }; pad.appendChild(b);
+  });
+  var rb = el('<button class="ghost">잊었어요</button>');
+  rb.onclick = function(){
+    var c = prompt("설정할 때 받은 복구 코드를 입력해 주세요.\n(기록은 그대로 있습니다.)");
+    if(c == null) return;
+    if(c.trim().toUpperCase() === S.pin.r){ S.pin = null; save(); g.remove(); done(); toast("잠금을 해제했습니다."); }
+    else toast("복구 코드가 다릅니다.");
+  };
+  pad.appendChild(rb);
+  var zb = el('<button>0</button>'); zb.onclick = function(){ press("0"); }; pad.appendChild(zb);
+  var db = el('<button class="ghost">지우기</button>');
+  db.onclick = function(){ buf = buf.slice(0,-1); paint(); }; pad.appendChild(db);
+  paint();
+  document.body.appendChild(g);
+}
+function openPinSetup(){
+  openSheet(S.pin ? "잠금 끄기" : "잠금 켜기", function(sheet, close){
+    var w = el('<div class="stack"></div>');
+    if(S.pin){
+      w.appendChild(el('<div class="small" style="line-height:1.7">잠금이 켜져 있습니다. 끄면 앱을 열 때 바로 들어옵니다.</div>'));
+      var off = el('<button class="btn" style="color:var(--warn);border-color:var(--warn)">잠금 끄기</button>');
+      off.onclick = function(){ S.pin = null; save(); close(); toast("잠금을 껐습니다."); };
+      w.appendChild(off);
+    } else {
+      w.appendChild(el('<div class="small" style="line-height:1.7">앱을 열 때 네 자리 숫자를 묻습니다. 곁에서 넘겨다보는 시선을 막는 용도이지, 기기 자체의 암호화를 대신하지는 않습니다.</div>'));
+      var f = el('<div class="field"><label>네 자리 숫자</label><input inputmode="numeric" maxlength="4" placeholder="••••"></div>');
+      w.appendChild(f);
+      var b = el('<button class="btn primary">켜기</button>');
+      b.onclick = function(){
+        var v = f.querySelector("input").value.trim();
+        if(!/^\d{4}$/.test(v)){ toast("숫자 네 자리를 입력해 주세요."); return; }
+        var code = randCode();
+        S.pin = { h: hash(v), r: code };
+        save(); close();
+        openSheet("복구 코드", function(s2){
+          var w2 = el('<div class="stack"></div>');
+          w2.appendChild(el('<div class="small" style="line-height:1.75">숫자를 잊었을 때 이 코드로 잠금을 풉니다. <b style="color:var(--ink)">지금 어딘가에 적어 두세요.</b> 다시 볼 수 없습니다.<br><br>상위 일기앱들이 “비밀번호를 잊으면 기록이 전부 사라진다”는 리뷰로 무너지는데, 그렇게 되지 않게 하려고 둔 장치입니다.</div>'));
+          w2.appendChild(el('<div class="recovery">'+esc(code)+'</div>'));
+          var cb = el('<button class="btn">복사해 두기</button>');
+          cb.onclick = function(){ copyFallback(code); };
+          w2.appendChild(cb);
+          var ok = el('<button class="btn primary">적어 뒀습니다</button>');
+          ok.onclick = function(){ closeSheet(); render(); toast("잠금을 켰습니다."); };
+          w2.appendChild(ok);
+          s2.appendChild(w2);
+        });
+      };
+      w.appendChild(b);
+    }
+    sheet.appendChild(w);
+  });
+}
+
 /* ==================== 탭 · 렌더 ==================== */
 var TABS = [
   {id:"today",  label:"오늘",   icon:'<circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/>'},
   {id:"flow",   label:"흐름",   icon:'<path d="M4 17c3-9 5 3 8-5s3 6 8 1"/>'},
   {id:"refs",   label:"참고",   icon:'<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5.5A1.5 1.5 0 0 1 4 15.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h4.5a1.5 1.5 0 0 0 1.5-1.5z"/>'},
-  {id:"export", label:"내보내기", icon:'<path d="M12 15V4"/><path d="M8.5 7.5 12 4l3.5 3.5"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/>'}
+  {id:"keep",   label:"보관",   icon:'<path d="M4 8h16v10.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"/><path d="M3 4.8A.8.8 0 0 1 3.8 4h16.4a.8.8 0 0 1 .8.8V8H3z"/><path d="M10 12h4"/>'}
 ];
 function renderTabs(){
   var nav = document.getElementById("tabs");
@@ -1102,7 +1649,7 @@ function render(){
   if(TAB==="today") frag = viewToday();
   else if(TAB==="flow") frag = viewFlow();
   else if(TAB==="refs") frag = viewRefs();
-  else frag = viewExport();
+  else frag = viewKeep();
   view.appendChild(frag);
   renderTabs();
 }
@@ -1118,7 +1665,34 @@ if(!S){
   save();
 }
 document.getElementById("settingsBtn").onclick = openSettings;
+document.getElementById("searchBtn").onclick = openSearch;
 document.addEventListener("keydown", function(e){ if(e.key === "Escape") closeSheet(); });
-render();
+
+lockGate(function(){
+  render();
+  /* 자동 백업 — 14일마다 한 번만 조용히 권합니다 */
+  if(!S.sample){
+    var due = !S.lastExport || daysAgo(S.lastExport) >= 14;
+    var askedToday = S.backupAsked === todayKey();
+    if(due && !askedToday){
+      S.backupAsked = todayKey(); save();
+      setTimeout(function(){
+        openSheet("기록을 지킬 시간", function(sheet, close){
+          var w = el('<div class="stack"></div>');
+          w.appendChild(el('<div class="small" style="line-height:1.75">'
+            + (S.lastExport ? '마지막으로 보관한 지 <b style="color:var(--ink)">'+daysAgo(S.lastExport)+'일</b>이 지났습니다.' : '아직 한 번도 파일로 남기지 않았습니다.')
+            + ' 기록은 이 폰 안에만 있어서, 브라우저 데이터를 지우면 함께 사라집니다.<br><br>파일 하나로 통째로 저장해 두면 언제든 되살릴 수 있습니다.</div>'));
+          var b = el('<button class="btn primary">지금 보관하기</button>');
+          b.onclick = function(){ close(); doBackup(); };
+          w.appendChild(b);
+          var l = el('<button class="btn">나중에</button>');
+          l.onclick = close;
+          w.appendChild(l);
+          sheet.appendChild(w);
+        });
+      }, 900);
+    }
+  }
+});
 })();
 </script>
