@@ -1,5 +1,5 @@
 /* 겨를 — 오프라인 캐시. 버전은 index.html의 APP_V를 따라갑니다. */
-const VERSION = "gyeoreul-v9";
+const VERSION = "gyeoreul-v10";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png"];
 
 self.addEventListener("install", (e) => {
@@ -34,8 +34,9 @@ self.addEventListener("fetch", (e) => {
     return;
   }
   // 앱 파일은 네트워크를 먼저 보고, 안 되면 캐시로 — 새 버전을 놓치지 않게.
+  // cache:"reload"로 브라우저 HTTP 캐시를 건너뛰어야 진짜 최신을 받아옵니다.
   e.respondWith(
-    fetch(e.request).then((res) => {
+    fetch(e.request.url, { cache: "reload" }).then((res) => {
       const copy = res.clone();
       caches.open(VERSION).then((c) => c.put(e.request, copy));
       return res;

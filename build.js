@@ -144,7 +144,10 @@ ${rest}
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", function () {
-    navigator.serviceWorker.register("sw.js").catch(function () {});
+    // updateViaCache:"none" — 서비스워커 파일을 HTTP 캐시에서 재사용하지 않고 항상 확인합니다.
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" })
+      .then(function (reg) { reg.update(); })
+      .catch(function () {});
   });
 }
 </script>
@@ -209,8 +212,9 @@ self.addEventListener("fetch", (e) => {
     return;
   }
   // 앱 파일은 네트워크를 먼저 보고, 안 되면 캐시로 — 새 버전을 놓치지 않게.
+  // cache:"reload"로 브라우저 HTTP 캐시를 건너뛰어야 진짜 최신을 받아옵니다.
   e.respondWith(
-    fetch(e.request).then((res) => {
+    fetch(e.request.url, { cache: "reload" }).then((res) => {
       const copy = res.clone();
       caches.open(VERSION).then((c) => c.put(e.request, copy));
       return res;

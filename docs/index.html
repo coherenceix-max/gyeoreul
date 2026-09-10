@@ -328,7 +328,7 @@ details.adv-box .adv-body{padding:0 15px 15px;display:flex;flex-direction:column
 "use strict";
 
 /* 앱 버전. 여기만 고치면 서비스워커 캐시 이름까지 따라갑니다(build.js가 읽어 갑니다). */
-var APP_V = "v9";
+var APP_V = "v10";
 
 /* ==================== 저장소 ==================== */
 var KEY = "naranhi.v1";
@@ -2380,7 +2380,10 @@ lockGate(function(){
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", function () {
-    navigator.serviceWorker.register("sw.js").catch(function () {});
+    // updateViaCache:"none" — 서비스워커 파일을 HTTP 캐시에서 재사용하지 않고 항상 확인합니다.
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" })
+      .then(function (reg) { reg.update(); })
+      .catch(function () {});
   });
 }
 </script>
