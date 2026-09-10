@@ -189,7 +189,7 @@ main{flex:1;padding:0 20px 96px;display:flex;flex-direction:column;gap:16px}
 .tab[aria-current="page"]{color:var(--ink);font-weight:500}
 
 /* ---------- sheet ---------- */
-.scrim{position:fixed;inset:0;background:rgba(10,14,12,.5);backdrop-filter:blur(3px);z-index:40;display:flex;align-items:flex-end;justify-content:center;animation:fade .18s ease}
+.scrim{position:fixed;inset:0;background:rgba(10,14,12,.5);backdrop-filter:blur(3px);z-index:90;display:flex;align-items:flex-end;justify-content:center;animation:fade .18s ease}
 @keyframes fade{from{opacity:0}}
 .sheet{background:var(--ground);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px 20px calc(24px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:15px;animation:up .24s cubic-bezier(.2,.8,.3,1)}
 @keyframes up{from{transform:translateY(22px)}}
@@ -330,7 +330,7 @@ var KEY = "naranhi.v1";
 var S = null;
 
 function blank(){
-  return { child:{name:"아이", birth:"", age:null}, supplements:["비타민D"], days:{}, lastExport:null, sample:false, seeded:false, pin:null, backupAsked:null, onboarded:false, tipHidden:false, sync:{ on:false, uid:null, email:"", last:null, pushed:{} } };
+  return { child:{name:"아이", birth:"", age:null}, supplements:["비타민D"], days:{}, lastExport:null, sample:false, seeded:false, pin:null, backupAsked:null, onboarded:false, tipHidden:false, profileU:0, sync:{ on:false, uid:null, email:"", last:null, pushed:{} } };
 }
 function load(){
   try{
@@ -339,6 +339,8 @@ function load(){
       var p = JSON.parse(raw);
       /* 이미 쓰고 있던 사람에게 첫 실행 화면을 다시 띄우지 않습니다 */
       if(p.onboarded === undefined) p.onboarded = !!(p.days && Object.keys(p.days).length);
+      /* 이미 설정을 마친 기기의 프로필을 기준으로 삼습니다 */
+      if(p.profileU === undefined) p.profileU = p.onboarded ? Date.now() : 0;
       return Object.assign(blank(), p);
     }
   }catch(e){}
@@ -532,7 +534,7 @@ var sheetRoot = document.getElementById("sheetRoot");
 var TAB = "today";
 
 function toast(msg){
-  var t = el('<div style="position:fixed;left:50%;bottom:82px;transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--ground);padding:11px 17px;border-radius:11px;font-size:13px;max-width:88vw;text-align:center;box-shadow:var(--shadow)">'+esc(msg)+'</div>');
+  var t = el('<div style="position:fixed;left:50%;bottom:82px;transform:translateX(-50%);z-index:95;background:var(--ink);color:var(--ground);padding:11px 17px;border-radius:11px;font-size:13px;max-width:88vw;text-align:center;box-shadow:var(--shadow)">'+esc(msg)+'</div>');
   document.body.appendChild(t);
   setTimeout(function(){ t.remove(); }, 2600);
 }
@@ -1245,7 +1247,7 @@ function openSettings(){
     b.onclick = function(){
       var n = f1.querySelector("input").value.trim();
       S.child.name = n || "아이";
-      S.supplements = f2.querySelector("input").value.split(",").map(function(x){return x.trim();}).filter(Boolean);
+      S.supplements = f2.querySelector("input").value.split(",").map(function(x){return x.trim();}).filter(Boolean); S.profileU = Date.now();
       save(); close(); render(); toast("저장했습니다.");
     };
     wrap.appendChild(b);
@@ -1861,6 +1863,13 @@ function stableU(dayKey, e){
 function pushAll(){
   var F = FB.F, uid = FB.user.uid, jobs = [];
   if(!S.sync.pushed) S.sync.pushed = {};
+
+  /* 아이 이름·나이·영양제. 이게 없으면 새 기기에서 기록만 오고 프로필은 "아이"로 남습니다. */
+  if(S.profileU && S.sync.pushed.profile !== S.profileU){
+    jobs.push(seal({ child:S.child, supplements:S.supplements }).then(function(c){
+      return F.setDoc(F.doc(FB.db, "users", uid, "meta", "profile"), { u:S.profileU, c:c });
+    }).then(function(){ S.sync.pushed.profile = S.profileU; }));
+  }
   Object.keys(S.days).forEach(function(dayKey){
     var d = S.days[dayKey];
     ["me","kid"].forEach(function(tr){
@@ -1894,9 +1903,22 @@ function pullAll(){
   }
   return Promise.all([
     F.getDocs(F.collection(FB.db, "users", uid, "entries")),
-    F.getDocs(F.collection(FB.db, "users", uid, "days"))
+    F.getDocs(F.collection(FB.db, "users", uid, "days")),
+    F.getDoc(F.doc(FB.db, "users", uid, "meta", "profile")).catch(function(){ return null; })
   ]).then(function(snaps){
     var jobs = [];
+    var prof = snaps[2];
+    if(prof && prof.exists && prof.exists()){
+      var pv = prof.data();
+      if(pv && pv.c && (pv.u || 0) > (S.profileU || 0)){
+        jobs.push(open_(pv.c).then(function(p){
+          if(p.child) S.child = p.child;
+          if(p.supplements) S.supplements = p.supplements;
+          S.profileU = pv.u;
+          S.sync.pushed.profile = pv.u;
+        }, function(){}));
+      }
+    }
     snaps[0].forEach(function(docSnap){
       var v = docSnap.data();
       if(!v || !v.c) return;
@@ -1963,7 +1985,7 @@ function syncSoon(){
 }
 
 /* ---------- 켜기 ---------- */
-function openSyncSetup(){
+function openSyncSetup(onDone){
   openSheet("여러 기기에서 쓰기", function(sheet, close){
     var w = el('<div class="stack"></div>');
     w.appendChild(el('<div class="small" style="line-height:1.8">폰·아이패드·노트북에서 같은 기록을 씁니다. 구글로 로그인하고, <b style="color:var(--ink)">동기화 암호</b>를 하나 정하면 됩니다.<br><br>기록은 기기에서 잠근 뒤에 올라갑니다. 서버에는 뜻 모를 글자만 쌓이고, <b style="color:var(--ink)">이 앱을 만든 사람도 구글도 읽을 수 없습니다.</b></div>'));
@@ -1991,7 +2013,7 @@ function openSyncSetup(){
         return FB.F.getDoc(FB.F.doc(FB.db, "users", FB.user.uid, "meta", "crypto"));
       }).then(function(snap){
         close();
-        askPassphrase(snap && snap.exists() ? snap.data() : null);
+        askPassphrase(snap && snap.exists() ? snap.data() : null, onDone);
       }).catch(function(err){
         go.disabled = false;
         stat.textContent = (err && (err.msg || err.message)) || "로그인에 실패했습니다.";
@@ -1999,7 +2021,7 @@ function openSyncSetup(){
     };
   });
 }
-function askPassphrase(existing){
+function askPassphrase(existing, onDone){
   var isNew = !existing;
   openSheet(isNew ? "동기화 암호 정하기" : "동기화 암호 입력", function(sheet, close){
     var w = el('<div class="stack"></div>');
@@ -2043,7 +2065,7 @@ function askPassphrase(existing){
         S.sync = { on:true, uid:FB.user.uid, email:FB.user.email || "", last:null, pushed:S.sync.pushed || {} };
         save(); close(); render();
         toast("동기화를 켰습니다.");
-        setTimeout(function(){ syncNow(false); }, 300);
+        setTimeout(function(){ syncNow(false).then(function(){ if(onDone) onDone(); }); }, 300);
       }).catch(function(err){
         go.disabled = false;
         FB.key = null;
@@ -2110,6 +2132,7 @@ function openIntro(done){
     S.child.name = picked.name || "아이";
     if(picked.age) S.child.age = picked.age;
     S.onboarded = true;
+    S.profileU = Date.now();
     if(withSample){ S.days = seed(); S.sample = true; }
     save();
     wrap.remove();
@@ -2131,6 +2154,17 @@ function openIntro(done){
       var b1 = el('<button class="btn primary">시작하기</button>');
       b1.onclick = function(){ step = 1; draw(); };
       box.appendChild(b1);
+      /* 노트북·아이패드처럼 새 기기에서 여는 경우. 없던 아이를 다시 만들 필요가 없습니다. */
+      var b3 = el('<button class="btn">이미 쓰던 계정으로 이어서</button>');
+      b3.onclick = function(){
+        openSyncSetup(function(){
+          S.onboarded = true; save();
+          wrap.remove();
+          done();
+        });
+      };
+      box.appendChild(b3);
+
       var b2 = el('<button class="btn">예시로 먼저 둘러보기</button>');
       b2.onclick = function(){ finish(true); };
       box.appendChild(b2);
