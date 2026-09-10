@@ -305,7 +305,7 @@ details.adv-box .adv-body{padding:0 15px 15px;display:flex;flex-direction:column
 "use strict";
 
 /* 앱 버전. 여기만 고치면 서비스워커 캐시 이름까지 따라갑니다(build.js가 읽어 갑니다). */
-var APP_V = "v10";
+var APP_V = "v11";
 
 /* ==================== 저장소 ==================== */
 var KEY = "naranhi.v1";
@@ -1868,6 +1868,10 @@ function errText(err){
   if(c.indexOf("popup-closed") >= 0) return "로그인 창이 닫혔습니다. 다시 시도해 주세요.";
   if(c.indexOf("unauthorized-domain") >= 0) return "이 주소가 Firebase에 등록돼 있지 않습니다.";
   if(c.indexOf("network") >= 0) return "인터넷 연결을 확인해 주세요.";
+  if(c.indexOf("permission-denied") >= 0 || /insufficient permissions/i.test(err.message || ""))
+    return "저장소가 아직 잠겨 있습니다. Firebase 콘솔의 Firestore → 규칙에서 보안 규칙을 게시해 주세요. (permission-denied)";
+  if(c.indexOf("unavailable") >= 0) return "저장소에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+  if(c.indexOf("not-found") >= 0) return "Firestore 데이터베이스를 찾지 못했습니다. 콘솔에서 만들어졌는지 확인해 주세요.";
   return (err.message || "로그인에 실패했습니다.") + (c ? " (" + c + ")" : "");
 }
 
@@ -2088,7 +2092,7 @@ function askPassphrase(existing, onDone){
       }).catch(function(err){
         go.disabled = false;
         FB.key = null;
-        msg.textContent = (err && (err.msg || err.message)) || "실패했습니다.";
+        msg.textContent = errText(err);
       });
     };
     setTimeout(function(){ f1.querySelector("input").focus(); }, 250);
