@@ -1,5 +1,5 @@
 /* 겨를 — 오프라인 캐시. 앱을 고칠 때마다 VERSION을 올리세요. */
-const VERSION = "gyeoreul-v4";
+const VERSION = "gyeoreul-v5";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png"];
 
 self.addEventListener("install", (e) => {
@@ -14,8 +14,14 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
-  // 폰트는 받아오면 캐시에 넣어 두고, 다음부터는 오프라인에서도 씁니다.
   if (url.origin !== location.origin) {
+    // 폰트와 Firebase 라이브러리만 캐시합니다. 한 번 받으면 오프라인에서도 열립니다.
+    const cacheable =
+      url.hostname === "fonts.googleapis.com" ||
+      url.hostname === "fonts.gstatic.com" ||
+      (url.hostname === "www.gstatic.com" && url.pathname.startsWith("/firebasejs/"));
+    // 나머지(동기화 통신 등)는 건드리지 않고 그대로 통과시킵니다.
+    if (!cacheable) return;
     e.respondWith(
       caches.match(e.request).then((hit) =>
         hit || fetch(e.request).then((res) => {

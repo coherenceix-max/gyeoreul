@@ -307,7 +307,7 @@ var KEY = "naranhi.v1";
 var S = null;
 
 function blank(){
-  return { child:{name:"아이", birth:"", age:null}, supplements:["비타민D"], days:{}, lastExport:null, sample:false, seeded:false, pin:null, backupAsked:null, onboarded:false, tipHidden:false };
+  return { child:{name:"아이", birth:"", age:null}, supplements:["비타민D"], days:{}, lastExport:null, sample:false, seeded:false, pin:null, backupAsked:null, onboarded:false, tipHidden:false, sync:{ on:false, uid:null, email:"", last:null, pushed:{} } };
 }
 function load(){
   try{
@@ -685,7 +685,7 @@ function openWrite(track, k){
       var entry = { id: uid(), u: Date.now(), t: String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0"), text:text };
       if(isKid){ entry.feel = picked.feel; entry.topics = picked.topics; d.kid.push(entry); }
       else { entry.mood = picked.mood; entry.tags = picked.tags; d.me.push(entry); }
-      S.days[k] = d; save(); close(); render();
+      S.days[k] = d; save(); close(); render(); syncSoon();
       if(isKid && picked.topics.length){
         var r = refById(picked.topics[0]);
         if(r) setTimeout(function(){ toast("‘"+r.title+"’ 자료가 참고 탭에 있습니다."); }, 400);
@@ -1121,6 +1121,8 @@ function claude_use(name){
 function viewKeep(){
   var out = document.createDocumentFragment();
   var keys = Object.keys(S.days).sort().filter(hasEntries);
+
+  out.appendChild(syncCard());
 
   /* 1. 안전하게 보관하기 */
   var c1 = el('<div class="keep-card"><h3>안전하게 보관하기</h3>'
@@ -1729,6 +1731,346 @@ function openPinSetup(){
   });
 }
 
+/* ==================== 동기화 ====================
+   설계 원칙 세 가지.
+   1) 기본은 꺼짐. 한 기기만 쓰는 사람의 기록은 서버로 한 글자도 안 갑니다.
+   2) 켜면 기기에서 잠급니다. 서버에는 뜻 모를 글자만 쌓이고,
+      이 앱을 만든 사람도 구글도 못 읽습니다.
+   3) 원본은 기기에 그대로 있습니다. 암호를 잊어도 손에 든 기기의 일기는 멀쩡합니다.
+      동기화만 끊깁니다. */
+var FBC = {
+  apiKey: "AIzaSyA1a7CyG5hVFQ1zWDYFaWuxiD-Tj_86C0I",
+  authDomain: "gyeoreul-7b87f.firebaseapp.com",
+  projectId: "gyeoreul-7b87f",
+  storageBucket: "gyeoreul-7b87f.firebasestorage.app",
+  messagingSenderId: "975895160438",
+  appId: "1:975895160438:web:d86d1bcc4ae7c978432157"
+};
+var SDK = "https://www.gstatic.com/firebasejs/10.14.1/";
+var FB = { app:null, auth:null, db:null, user:null, key:null, busy:false, err:null };
+var KEYSTORE = "naranhi.key";
+
+/* ---------- 잠그고 풀기 ---------- */
+function b64(bytes){
+  var s = "";
+  for(var i=0;i<bytes.length;i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s);
+}
+function unb64(str){
+  var raw = atob(str), out = new Uint8Array(raw.length);
+  for(var i=0;i<raw.length;i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+function deriveKey(pass, salt){
+  var enc = new TextEncoder();
+  return crypto.subtle.importKey("raw", enc.encode(pass), "PBKDF2", false, ["deriveKey"])
+    .then(function(base){
+      return crypto.subtle.deriveKey(
+        { name:"PBKDF2", salt:salt, iterations:210000, hash:"SHA-256" },
+        base, { name:"AES-GCM", length:256 }, true, ["encrypt","decrypt"]);
+    });
+}
+function seal(obj){
+  var iv = crypto.getRandomValues(new Uint8Array(12));
+  return crypto.subtle.encrypt({ name:"AES-GCM", iv:iv }, FB.key,
+      new TextEncoder().encode(JSON.stringify(obj)))
+    .then(function(ct){ return b64(iv) + "." + b64(new Uint8Array(ct)); });
+}
+function open_(blob){
+  var p = String(blob).split(".");
+  return crypto.subtle.decrypt({ name:"AES-GCM", iv:unb64(p[0]) }, FB.key, unb64(p[1]))
+    .then(function(pt){ return JSON.parse(new TextDecoder().decode(pt)); });
+}
+function rememberKey(){
+  return crypto.subtle.exportKey("raw", FB.key).then(function(raw){
+    try{ localStorage.setItem(KEYSTORE, b64(new Uint8Array(raw))); }catch(e){}
+  });
+}
+function recallKey(){
+  var s = null;
+  try{ s = localStorage.getItem(KEYSTORE); }catch(e){}
+  if(!s) return Promise.resolve(false);
+  return crypto.subtle.importKey("raw", unb64(s), { name:"AES-GCM" }, true, ["encrypt","decrypt"])
+    .then(function(k){ FB.key = k; return true; }, function(){ return false; });
+}
+function forgetKey(){ try{ localStorage.removeItem(KEYSTORE); }catch(e){} FB.key = null; }
+
+/* ---------- Firebase 불러오기 ---------- */
+function fbLoad(){
+  if(FB.app) return Promise.resolve(true);
+  if(!window.crypto || !crypto.subtle) return Promise.reject({ msg:"이 브라우저에서는 동기화를 쓸 수 없습니다." });
+  return Promise.all([
+      import(SDK + "firebase-app.js"),
+      import(SDK + "firebase-auth.js"),
+      import(SDK + "firebase-firestore.js")
+    ]).then(function(m){
+      FB.A = m[0]; FB.U = m[1]; FB.F = m[2];
+      FB.app = FB.A.initializeApp(FBC);
+      FB.auth = FB.U.getAuth(FB.app);
+      FB.db = FB.F.getFirestore(FB.app);
+      FB.U.onAuthStateChanged(FB.auth, function(u){
+        FB.user = u || null;
+        if(TAB === "keep") render();
+      });
+      return FB.U.getRedirectResult(FB.auth).catch(function(){ return null; }).then(function(){ return true; });
+    }, function(){
+      return Promise.reject({ msg:"동기화 기능을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요." });
+    });
+}
+function fbSignIn(){
+  return fbLoad().then(function(){
+    var prov = new FB.U.GoogleAuthProvider();
+    return FB.U.signInWithPopup(FB.auth, prov).catch(function(err){
+      var c = (err && err.code) || "";
+      if(/popup|operation-not-supported|web-storage/.test(c)) return FB.U.signInWithRedirect(FB.auth, prov);
+      throw err;
+    });
+  });
+}
+
+/* ---------- 기록마다 안정된 시각 ---------- */
+function stableU(dayKey, e){
+  var t = Date.parse(dayKey + "T" + (e.t || "00:00") + ":00");
+  return isNaN(t) ? Date.now() : t;
+}
+
+/* ---------- 올리기 ---------- */
+function pushAll(){
+  var F = FB.F, uid = FB.user.uid, jobs = [];
+  if(!S.sync.pushed) S.sync.pushed = {};
+  Object.keys(S.days).forEach(function(dayKey){
+    var d = S.days[dayKey];
+    ["me","kid"].forEach(function(tr){
+      (d[tr] || []).forEach(function(e){
+        if(!e.id) e.id = uid();
+        if(!e.u) e.u = stableU(dayKey, e);
+        if(S.sync.pushed[e.id] === e.u) return;
+        jobs.push(seal({ t:e.t, text:e.text, mood:e.mood, feel:e.feel, tags:e.tags, topics:e.topics })
+          .then(function(c){
+            return F.setDoc(F.doc(FB.db, "users", uid, "entries", e.id),
+              { day:dayKey, track:tr, u:e.u, c:c });
+          }).then(function(){ S.sync.pushed[e.id] = e.u; }));
+      });
+    });
+    if(d.ritualU && S.sync.pushed["r:" + dayKey] !== d.ritualU){
+      jobs.push(seal(d.ritual || {}).then(function(c){
+        return F.setDoc(F.doc(FB.db, "users", uid, "days", dayKey), { ritualU:d.ritualU, c:c });
+      }).then(function(){ S.sync.pushed["r:" + dayKey] = d.ritualU; }));
+    }
+  });
+  return Promise.all(jobs);
+}
+
+/* ---------- 받아서 합치기 ---------- */
+function pullAll(){
+  var F = FB.F, uid = FB.user.uid;
+  var incoming = { days:{} };
+  function bucket(dayKey){
+    if(!incoming.days[dayKey]) incoming.days[dayKey] = { ritual:{}, me:[], kid:[] };
+    return incoming.days[dayKey];
+  }
+  return Promise.all([
+    F.getDocs(F.collection(FB.db, "users", uid, "entries")),
+    F.getDocs(F.collection(FB.db, "users", uid, "days"))
+  ]).then(function(snaps){
+    var jobs = [];
+    snaps[0].forEach(function(docSnap){
+      var v = docSnap.data();
+      if(!v || !v.c) return;
+      jobs.push(open_(v.c).then(function(p){
+        p.id = docSnap.id; p.u = v.u;
+        var b = bucket(v.day);
+        (b[v.track] || b.kid).push(p);
+      }, function(){}));
+    });
+    snaps[1].forEach(function(docSnap){
+      var v = docSnap.data();
+      if(!v || !v.c) return;
+      jobs.push(open_(v.c).then(function(r){
+        var b = bucket(docSnap.id);
+        b.ritual = r; b.ritualU = v.ritualU;
+      }, function(){}));
+    });
+    return Promise.all(jobs);
+  }).then(function(){
+    var got = mergeInto(S, incoming);
+    Object.keys(incoming.days).forEach(function(dayKey){
+      var b = incoming.days[dayKey];
+      ["me","kid"].forEach(function(tr){
+        b[tr].forEach(function(e){ S.sync.pushed[e.id] = e.u; });
+      });
+      if(b.ritualU) S.sync.pushed["r:" + dayKey] = b.ritualU;
+    });
+    return got;
+  });
+}
+
+function syncNow(quiet){
+  if(!S.sync.on || FB.busy) return Promise.resolve(null);
+  if(!navigator.onLine){ if(!quiet) toast("인터넷이 없습니다. 연결되면 다시 시도하세요."); return Promise.resolve(null); }
+  FB.busy = true; FB.err = null;
+  if(TAB === "keep") render();
+  return fbLoad()
+    .then(function(){
+      if(!FB.user) throw { msg:"로그인이 풀렸습니다. 다시 로그인해 주세요." };
+      if(!FB.key) throw { msg:"동기화 암호가 필요합니다." };
+      return pullAll();
+    })
+    .then(function(got){ return pushAll().then(function(){ return got; }); })
+    .then(function(got){
+      S.sync.last = Date.now();
+      S.sample = S.sample && !(got && got.added);
+      save(); FB.busy = false; render();
+      if(!quiet) toast(got && got.added ? "동기화 완료. 새 기록 " + got.added + "개." : "동기화 완료.");
+      return got;
+    })
+    .catch(function(err){
+      FB.busy = false;
+      FB.err = (err && (err.msg || err.message)) || "동기화에 실패했습니다.";
+      render();
+      if(!quiet) toast(FB.err);
+      return null;
+    });
+}
+var syncTimer = null;
+function syncSoon(){
+  if(!S.sync.on) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(function(){ syncNow(true); }, 2500);
+}
+
+/* ---------- 켜기 ---------- */
+function openSyncSetup(){
+  openSheet("여러 기기에서 쓰기", function(sheet, close){
+    var w = el('<div class="stack"></div>');
+    w.appendChild(el('<div class="small" style="line-height:1.8">폰·아이패드·노트북에서 같은 기록을 씁니다. 구글로 로그인하고, <b style="color:var(--ink)">동기화 암호</b>를 하나 정하면 됩니다.<br><br>기록은 기기에서 잠근 뒤에 올라갑니다. 서버에는 뜻 모를 글자만 쌓이고, <b style="color:var(--ink)">이 앱을 만든 사람도 구글도 읽을 수 없습니다.</b></div>'));
+    var stat = el('<div class="small mono"></div>');
+    w.appendChild(stat);
+    var go = el('<button class="btn primary">구글로 로그인</button>');
+    w.appendChild(go);
+    w.appendChild(el('<div class="disclaimer">암호는 되찾을 수 없습니다. 잊으면 서버 사본을 못 여는 대신, <b>이 기기의 일기는 그대로 남습니다.</b> 동기화만 끊깁니다.</div>'));
+    sheet.appendChild(w);
+
+    go.onclick = function(){
+      go.disabled = true; stat.textContent = "로그인 창을 여는 중…";
+      fbSignIn().then(function(){
+        return new Promise(function(res){
+          var n = 0;
+          (function wait(){
+            if(FB.user) return res();
+            if(++n > 60) return res();
+            setTimeout(wait, 250);
+          })();
+        });
+      }).then(function(){
+        if(!FB.user) throw { msg:"로그인이 완료되지 않았습니다." };
+        stat.textContent = FB.user.email + " 로 로그인됨";
+        return FB.F.getDoc(FB.F.doc(FB.db, "users", FB.user.uid, "meta", "crypto"));
+      }).then(function(snap){
+        close();
+        askPassphrase(snap && snap.exists() ? snap.data() : null);
+      }).catch(function(err){
+        go.disabled = false;
+        stat.textContent = (err && (err.msg || err.message)) || "로그인에 실패했습니다.";
+      });
+    };
+  });
+}
+function askPassphrase(existing){
+  var isNew = !existing;
+  openSheet(isNew ? "동기화 암호 정하기" : "동기화 암호 입력", function(sheet, close){
+    var w = el('<div class="stack"></div>');
+    w.appendChild(el('<div class="small" style="line-height:1.75">'
+      + (isNew
+        ? '이 암호로 기록을 잠급니다. 다른 기기에서도 <b style="color:var(--ink)">똑같이 입력</b>해야 기록이 열립니다. 네 글자 이상이면 됩니다.'
+        : '이 계정에는 이미 잠긴 기록이 있습니다. 처음 정하셨던 암호를 입력해 주세요.') + '</div>'));
+    var f1 = el('<div class="field"><label>동기화 암호</label><input type="password" autocomplete="off"></div>');
+    w.appendChild(f1);
+    var f2 = null;
+    if(isNew){
+      f2 = el('<div class="field"><label>한 번 더</label><input type="password" autocomplete="off"></div>');
+      w.appendChild(f2);
+    }
+    var msg = el('<div class="small"></div>');
+    w.appendChild(msg);
+    var go = el('<button class="btn primary">'+(isNew ? "켜기" : "열기")+'</button>');
+    w.appendChild(go);
+    sheet.appendChild(w);
+
+    go.onclick = function(){
+      var pass = f1.querySelector("input").value;
+      if(pass.length < 4){ msg.textContent = "네 글자 이상 입력해 주세요."; return; }
+      if(isNew && pass !== f2.querySelector("input").value){ msg.textContent = "두 번 입력한 암호가 다릅니다."; return; }
+      go.disabled = true; msg.textContent = "준비하는 중…";
+      var salt = isNew ? crypto.getRandomValues(new Uint8Array(16)) : unb64(existing.salt);
+      deriveKey(pass, salt).then(function(k){
+        FB.key = k;
+        if(isNew){
+          return seal({ ok:true }).then(function(check){
+            return FB.F.setDoc(FB.F.doc(FB.db, "users", FB.user.uid, "meta", "crypto"),
+              { salt:b64(salt), check:check });
+          });
+        }
+        return open_(existing.check).catch(function(){
+          throw { msg:"암호가 맞지 않습니다." };
+        });
+      }).then(function(){
+        return rememberKey();
+      }).then(function(){
+        S.sync = { on:true, uid:FB.user.uid, email:FB.user.email || "", last:null, pushed:S.sync.pushed || {} };
+        save(); close(); render();
+        toast("동기화를 켰습니다.");
+        setTimeout(function(){ syncNow(false); }, 300);
+      }).catch(function(err){
+        go.disabled = false;
+        FB.key = null;
+        msg.textContent = (err && (err.msg || err.message)) || "실패했습니다.";
+      });
+    };
+    setTimeout(function(){ f1.querySelector("input").focus(); }, 250);
+  });
+}
+function syncOff(){
+  if(!confirm("이 기기에서 동기화를 끕니다.\n기록은 그대로 남고, 서버 사본도 지우지 않습니다.")) return;
+  forgetKey();
+  S.sync = { on:false, uid:null, email:"", last:null, pushed:{} };
+  save();
+  if(FB.auth && FB.U) FB.U.signOut(FB.auth).catch(function(){});
+  render();
+  toast("동기화를 껐습니다.");
+}
+function syncCard(){
+  var c = el('<div class="keep-card"><h3>여러 기기에서 쓰기</h3></div>');
+  if(!S.sync.on){
+    c.appendChild(el('<div class="kc-d">지금은 <b>꺼져 있습니다.</b> 기록은 이 기기 밖으로 한 글자도 나가지 않습니다.<br><br>폰·아이패드·노트북에서 같이 쓰고 싶으면 켜세요. 켜면 기기에서 잠근 뒤 올라가서, 이 앱을 만든 사람도 읽을 수 없습니다.</div>'));
+    var on = el('<button class="btn">켜기</button>');
+    on.onclick = openSyncSetup;
+    c.appendChild(on);
+    return c;
+  }
+  var when = S.sync.last ? (function(){
+    var m = Math.round((Date.now() - S.sync.last) / 60000);
+    if(m < 1) return "방금";
+    if(m < 60) return m + "분 전";
+    var h = Math.round(m / 60);
+    return h < 24 ? h + "시간 전" : Math.round(h / 24) + "일 전";
+  })() : "아직";
+  c.appendChild(el('<div class="spread"><span class="small">' + esc(S.sync.email || "로그인됨") + '</span>'
+    + '<span class="small">' + (FB.busy ? "동기화 중…" : "마지막 " + when) + '</span></div>'));
+  if(FB.err) c.appendChild(el('<div class="small" style="color:var(--warn);line-height:1.6">' + esc(FB.err) + '</div>'));
+  var row = el('<div class="btn-row"></div>');
+  var now = el('<button class="btn primary" style="flex:1">지금 동기화</button>');
+  now.disabled = FB.busy;
+  now.onclick = function(){ syncNow(false); };
+  row.appendChild(now);
+  var off = el('<button class="btn">끄기</button>');
+  off.onclick = syncOff;
+  row.appendChild(off);
+  c.appendChild(row);
+  c.appendChild(el('<div class="adv">각 기기에서 같은 구글 계정으로 로그인하고 같은 동기화 암호를 넣으면 이어집니다.</div>'));
+  return c;
+}
+
 /* ==================== 첫 실행 ==================== */
 function openIntro(done){
   var step = 0, picked = { name:"", age:null };
@@ -1875,6 +2217,17 @@ lockGate(function(){
   }
   render();
   setTimeout(maybeInstallTip, 2200);
+
+  /* 켜져 있으면 조용히 맞춥니다 */
+  if(S.sync && S.sync.on){
+    recallKey().then(function(ok){
+      if(!ok){ FB.err = "이 기기에서 동기화 암호를 다시 넣어야 합니다."; render(); return; }
+      return fbLoad().then(function(){
+        setTimeout(function(){ syncNow(true); }, 1200);
+      }, function(){});
+    });
+  }
+
   /* 자동 백업 — 14일마다 한 번만 조용히 권합니다 */
   if(!S.sample){
     var due = !S.lastExport || daysAgo(S.lastExport) >= 14;
