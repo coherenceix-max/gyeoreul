@@ -275,12 +275,34 @@ details.adv-box .adv-body{padding:0 15px 15px;display:flex;flex-direction:column
 .agerow button.wide{grid-column:span 3;font-family:var(--sans);font-size:14px;color:var(--muted)}
 
 /* ---------- 홈 화면 추가 안내 ---------- */
-.ios-tip{position:fixed;left:12px;right:12px;bottom:calc(72px + env(safe-area-inset-bottom));z-index:35;max-width:536px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 15px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:9px}
+.ios-tip{position:fixed;left:12px;right:12px;bottom:calc(140px + env(safe-area-inset-bottom));z-index:35;max-width:536px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 15px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:9px}
 .ios-tip .t{font-family:var(--serif);font-size:15.5px}
 .ios-tip .d{font-size:12.5px;color:var(--muted);line-height:1.65}
 .ios-tip .share-ico{display:inline-flex;width:15px;height:15px;vertical-align:-2px;margin:0 1px}
 .ios-tip .row2{display:flex;gap:8px;justify-content:flex-end}
 .ios-tip button{font-size:12.5px;padding:7px 12px;border-radius:9px;border:1px solid var(--line);color:var(--muted)}
+
+/* ---------- AI에게 묻기 ---------- */
+.fab{position:fixed;right:max(16px,calc((100vw - 560px)/2 + 16px));bottom:calc(78px + env(safe-area-inset-bottom));z-index:36;width:52px;height:52px;border-radius:50%;background:var(--ink);color:var(--ground);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);transition:transform .15s}
+.fab:hover{transform:translateY(-1px)}
+.fab svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.chat{display:flex;flex-direction:column;gap:10px;height:min(68vh,600px)}
+.chat-log{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:2px 2px 6px}
+.bub{max-width:86%;padding:10px 13px;border-radius:14px;font-size:14.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+.bub.u{align-self:flex-end;background:var(--me-wash);color:var(--ink);border-bottom-right-radius:5px}
+.bub.a{align-self:flex-start;background:var(--surface);border:1px solid var(--line);color:var(--ink-soft);border-bottom-left-radius:5px}
+.bub.wait{color:var(--muted)}
+.bub.err{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 35%,transparent)}
+.bub .ctx{display:block;font-size:11px;color:var(--me);margin-bottom:4px;letter-spacing:.02em}
+.starters{display:flex;flex-direction:column;gap:7px}
+.starter{text-align:left;padding:10px 13px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:13.5px;color:var(--ink-soft);line-height:1.5}
+.starter:hover{border-color:var(--me);color:var(--ink)}
+.chat-in{display:flex;gap:8px;align-items:flex-end}
+.chat-in textarea{min-height:44px;max-height:120px;font-family:var(--sans);font-size:15px;line-height:1.5;padding:10px 12px;resize:none}
+.send{flex-shrink:0;width:44px;height:44px;border-radius:12px;background:var(--ink);color:var(--ground);display:flex;align-items:center;justify-content:center}
+.send:disabled{opacity:.35;cursor:default}
+.send svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.chat-foot{font-size:11px;color:var(--muted);text-align:center;line-height:1.5}
 </style>
 
 <div class="app">
@@ -305,14 +327,14 @@ details.adv-box .adv-body{padding:0 15px 15px;display:flex;flex-direction:column
 "use strict";
 
 /* 앱 버전. 여기만 고치면 서비스워커 캐시 이름까지 따라갑니다(build.js가 읽어 갑니다). */
-var APP_V = "v11";
+var APP_V = "v12";
 
 /* ==================== 저장소 ==================== */
 var KEY = "naranhi.v1";
 var S = null;
 
 function blank(){
-  return { child:{name:"아이", birth:"", age:null}, supplements:["비타민D"], days:{}, lastExport:null, sample:false, seeded:false, pin:null, backupAsked:null, onboarded:false, tipHidden:false, profileU:0, sync:{ on:false, uid:null, email:"", last:null, pushed:{} } };
+  return { child:{name:"아이", birth:"", age:null}, supplements:["비타민D"], days:{}, lastExport:null, sample:false, seeded:false, pin:null, backupAsked:null, onboarded:false, tipHidden:false, profileU:0, sync:{ on:false, uid:null, email:"", last:null, pushed:{} }, ai:{ withToday:false } };
 }
 function load(){
   try{
@@ -852,6 +874,7 @@ function buildSpine(entries){
     var meta = '<span class="who">'+esc(isKid ? S.child.name : "나")+'</span><span class="mono">'+esc(e.t||"")+'</span>';
     if(isKid && e.feel) meta += '<span>'+esc(e.feel)+'</span>';
     if(!isKid && e.mood) meta += '<span class="mono">기분 '+e.mood+'</span>';
+    if(e.from === "chat") meta += '<span>대화에서</span>';
     node.appendChild(el('<div class="node-meta">'+meta+'</div>'));
     if(e.text) node.appendChild(el('<div class="node-text">'+esc(e.text)+'</div>'));
     var tags = isKid ? (e.topics||[]).map(function(t){ return {l:topicLabel(t), c:"k", ref:!!refById(t), id:t}; })
@@ -1763,7 +1786,7 @@ var FBC = {
   messagingSenderId: "975895160438",
   appId: "1:975895160438:web:d86d1bcc4ae7c978432157"
 };
-var SDK = "https://www.gstatic.com/firebasejs/10.14.1/";
+var SDK = "https://www.gstatic.com/firebasejs/12.19.0/";
 var FB = { app:null, auth:null, db:null, user:null, key:null, busy:false, err:null };
 var KEYSTORE = "naranhi.key";
 
@@ -1899,7 +1922,7 @@ function pushAll(){
         if(!e.id) e.id = uid();
         if(!e.u) e.u = stableU(dayKey, e);
         if(S.sync.pushed[e.id] === e.u) return;
-        jobs.push(seal({ t:e.t, text:e.text, mood:e.mood, feel:e.feel, tags:e.tags, topics:e.topics })
+        jobs.push(seal({ t:e.t, text:e.text, mood:e.mood, feel:e.feel, tags:e.tags, topics:e.topics, from:e.from })
           .then(function(c){
             return F.setDoc(F.doc(FB.db, "users", uid, "entries", e.id),
               { day:dayKey, track:tr, u:e.u, c:c });
@@ -2139,6 +2162,283 @@ function syncCard(){
   return c;
 }
 
+/* ==================== AI에게 묻기 ====================
+   일기를 쓰다 깨달은 것을 바로 물어보는 대화창.
+   - 대화는 저장하지 않습니다. 앱이 열려 있는 동안만 기억하고, 앱을 다시 열면 사라집니다.
+   - 일기는 '오늘 기록 함께 보기'를 켰을 때만 나갑니다. 한 번 켜 두면 계속 켜져 있습니다.
+   - Gemini(Firebase AI Logic)가 답합니다. 결제 계정이 연결된 프로젝트에서는 입력이 학습에 쓰이지 않습니다. */
+var AI_MODEL = "gemini-3.8-flash";
+var AIC = { M:null, ai:null, chat:null, log:[], ctxSent:false, busy:false };
+
+function aiSystem(){
+  var age = S.child && S.child.age;
+  var who = (typeof age === "number") ? ("만 " + age + "세 아이") : "어린 아이";
+  return [
+    "너는 '겨를'이라는 일기 앱 안에서 부모와 이야기하는 대화 상대다. 사용자는 " + who + "를 키우는 부모다.",
+    "",
+    "말하는 방식",
+    "- 한국어로, 따뜻하지만 담백하게 말한다. 과한 칭찬이나 감탄은 하지 않는다.",
+    "- 폰 화면에서 읽기 좋게 짧게 답한다. 보통 3~6문장, 필요하면 짧은 목록.",
+    "- 제목(#)이나 표는 쓰지 않는다. 강조가 필요할 때만 **굵게**를 쓴다.",
+    "- 사용자를 판단하거나 탓하지 않는다. 부모도 지치는 사람이라는 전제에서 이야기한다.",
+    "",
+    "내용",
+    "- 아이의 행동은 발달 단계의 맥락에서 설명하고, 오늘 바로 해볼 수 있는 구체적인 행동을 1~3개 제안한다.",
+    "- 상황이 모호하면 추측하기 전에 한 가지만 되묻는다.",
+    "- 진단하지 않는다. 장애나 증후군의 이름을 붙이지 않는다. 걱정되는 신호가 보이면 소아청소년과나 아동 발달·심리 전문가 상담을 권한다.",
+    "- 근거가 약한 이야기는 단정하지 않는다.",
+    "",
+    "위기",
+    "- 아이나 사용자가 다치거나 위험한 상황, 스스로를 해치고 싶다는 말이 나오면 다른 조언보다 먼저 도움받을 곳을 알린다: 자살예방 상담 109, 정신건강 위기상담 1577-0199, 아동학대 신고 112, 응급 119.",
+    "",
+    "일기",
+    "- 사용자가 [오늘 기록]을 함께 보내면 그 구체적인 내용을 근거로 이야기한다. 기록에 없는 사실은 지어내지 않는다."
+  ].join("\n");
+}
+function aiLoad(){
+  if(AIC.ai) return Promise.resolve(AIC.ai);
+  return fbLoad().then(function(){
+    return import(SDK + "firebase-ai.js").catch(function(){
+      throw { msg:"AI 기능을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요." };
+    });
+  }).then(function(m){
+    AIC.M = m;
+    AIC.ai = m.getAI(FB.app, { backend: new m.GoogleAIBackend() });
+    return AIC.ai;
+  });
+}
+function aiModel(opts){
+  return AIC.M.getGenerativeModel(AIC.ai, Object.assign({ model: AI_MODEL }, opts));
+}
+function aiErr(e){
+  if(e && e.msg) return e.msg;
+  var m = String((e && (e.message || e.code)) || "");
+  if(/api.?not.?enabled|has not been used|is disabled|SERVICE_DISABLED|PERMISSION_DENIED|403/i.test(m))
+    return "AI 기능이 아직 켜지지 않았습니다. Firebase 콘솔 → AI 서비스 → AI Logic에서 Gemini Developer API를 켜 주세요.";
+  if(/billing|RESOURCE_EXHAUSTED|quota|429/i.test(m))
+    return "지금은 AI 사용 한도에 걸렸습니다. 잠시 후 다시 시도해 주세요.";
+  if(/SAFETY|blocked/i.test(m))
+    return "이 질문에는 답을 만들지 못했습니다. 조금 다르게 물어봐 주세요.";
+  if(/network|Failed to fetch|offline/i.test(m) || !navigator.onLine)
+    return "인터넷 연결을 확인해 주세요.";
+  return "답을 받지 못했습니다." + (m ? " (" + m.slice(0, 140) + ")" : "");
+}
+/* '오늘 기록 함께 보기'를 켰을 때 질문 앞에 붙는 내용 */
+function todayContext(){
+  var k = todayKey(), d = S.days[k];
+  if(!d) return null;
+  var es = [];
+  (d.me || []).forEach(function(e){ es.push({ who:"나", e:e, me:true }); });
+  (d.kid || []).forEach(function(e){ es.push({ who:S.child.name, e:e, me:false }); });
+  if(!es.length) return null;
+  es.sort(function(a, b){ return (a.e.t || "") < (b.e.t || "") ? -1 : 1; });
+  var L = ["[오늘 기록 · " + k + "]"];
+  es.forEach(function(x){
+    var e = x.e, bits = [x.who, e.t || ""];
+    if(x.me && e.mood) bits.push("기분 " + e.mood + "/5");
+    if(!x.me && e.feel) bits.push(e.feel);
+    var tags = x.me ? (e.tags || []).map(meTagLabel) : (e.topics || []).map(topicLabel);
+    if(tags.length) bits.push(tags.map(function(t){ return "#" + t.replace(/\s/g, ""); }).join(" "));
+    L.push(bits.join(" · ") + (e.text ? " — " + e.text : ""));
+  });
+  var r = d.ritual || {}, body = [];
+  if(r.sleep) body.push("어젯밤 잠 " + r.sleep + "시간");
+  if(r.meal !== undefined) body.push("끼니 " + (r.meal ? "챙김" : "못 챙김"));
+  if(body.length) L.push("몸 · " + body.join(", "));
+  return L.join("\n");
+}
+function aiFmt(s){
+  return esc(s).replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>").replace(/^[ \t]*[-*][ \t]+/gm, "· ");
+}
+async function aiRead(result, onText){
+  for await (var chunk of result.stream){
+    var t = "";
+    try{ t = chunk.text(); }catch(e){}
+    if(t) onText(t);
+  }
+}
+function ensureFab(){
+  if(document.getElementById("aiFab")) return;
+  var b = el('<button class="fab" id="aiFab" aria-label="AI에게 물어보기">'
+    + '<svg viewBox="0 0 24 24"><path d="M5 18.5V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H8.5z"/>'
+    + '<path d="M12 7.6l.9 2 2 .9-2 .9-.9 2-.9-2-2-.9 2-.9z"/></svg></button>');
+  b.onclick = openChat;
+  document.body.appendChild(b);
+}
+function openChat(){
+  openSheet("물어보기", function(sheet){
+    var box = el('<div class="chat"></div>');
+
+    var top = el('<div class="stack" style="gap:6px"></div>');
+    var row = el('<div class="spread"></div>');
+    var chip = el('<button class="fchip">오늘 기록 함께 보기</button>');
+    var fresh = el('<button class="small" style="text-decoration:underline;text-underline-offset:3px">새 대화</button>');
+    row.appendChild(chip); row.appendChild(fresh);
+    var cap = el('<div class="small" style="line-height:1.55"></div>');
+    top.appendChild(row); top.appendChild(cap);
+    box.appendChild(top);
+
+    var logEl = el('<div class="chat-log"></div>');
+    box.appendChild(logEl);
+    var keepWrap = el('<div></div>');
+    box.appendChild(keepWrap);
+
+    var inWrap = el('<div class="chat-in"></div>');
+    var ta = el('<textarea rows="1" placeholder="무엇이든 물어보세요"></textarea>');
+    var sendB = el('<button class="send" aria-label="보내기"><svg viewBox="0 0 24 24"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg></button>');
+    inWrap.appendChild(ta); inWrap.appendChild(sendB);
+    box.appendChild(inWrap);
+    box.appendChild(el('<div class="chat-foot">Gemini가 답합니다 · 대화는 저장되지 않습니다 · 진단이 아닌 참고용입니다</div>'));
+    sheet.appendChild(box);
+
+    function paintTop(){
+      chip.setAttribute("aria-pressed", S.ai.withToday ? "true" : "false");
+      if(S.ai.withToday){
+        cap.textContent = todayContext()
+          ? "켜짐 · 오늘 쓴 기록이 질문과 함께 Gemini에게 갑니다."
+          : "켜짐 · 다만 오늘은 아직 쓴 기록이 없습니다.";
+      } else {
+        cap.textContent = AIC.ctxSent
+          ? "꺼짐 · 이제부터는 질문만 갑니다. 앞서 보낸 기록은 이 대화 안에 남아 있습니다."
+          : "꺼짐 · 질문만 갑니다. 일기는 나가지 않습니다.";
+      }
+    }
+    chip.onclick = function(){
+      S.ai.withToday = !S.ai.withToday;
+      if(S.ai.withToday) AIC.ctxSent = false;
+      save(); paintTop(); paintLog();
+    };
+    fresh.onclick = function(){
+      if(AIC.busy) return;
+      AIC.chat = null; AIC.log = []; AIC.ctxSent = false;
+      paintTop(); paintLog();
+    };
+
+    function paintLog(){
+      logEl.innerHTML = "";
+      if(!AIC.log.length){
+        var st = el('<div class="starters"></div>');
+        st.appendChild(el('<div class="small" style="margin-bottom:2px">일기를 쓰다 떠오른 게 있으면 그대로 물어보세요.</div>'));
+        var list = S.ai.withToday
+          ? ["오늘 기록을 보고, 내가 놓친 게 있을까요?", "오늘 아이 행동, 어떻게 이해하면 좋을까요?", "오늘 나한테 필요한 건 뭘까요?"]
+          : ["아이한테 화를 낸 게 계속 마음에 걸려요.", "요즘 아이가 떼를 자주 써요. 왜 그럴까요?", "잠들기 전마다 실랑이를 해요."];
+        list.forEach(function(q){
+          var b = el('<button class="starter">' + esc(q) + '</button>');
+          b.onclick = function(){ send(q); };
+          st.appendChild(b);
+        });
+        logEl.appendChild(st);
+      } else {
+        AIC.log.forEach(function(m){
+          var b = el('<div class="bub ' + m.role + (m.wait ? " wait" : "") + (m.err ? " err" : "") + '"></div>');
+          b.innerHTML = (m.ctx ? '<span class="ctx">오늘 기록과 함께 보냄</span>' : "")
+            + (m.wait && !m.text ? "생각하는 중…" : (m.role === "a" ? aiFmt(m.text) : esc(m.text)));
+          logEl.appendChild(b);
+        });
+      }
+      logEl.scrollTop = logEl.scrollHeight;
+      paintKeep();
+    }
+
+    /* 대화에서 깨달은 걸 오늘 나의 기록으로 옮깁니다 */
+    function paintKeep(){
+      keepWrap.innerHTML = "";
+      var has = AIC.log.some(function(m){ return m.role === "a" && m.text && !m.err && !m.wait; });
+      if(!has || AIC.busy) return;
+      var kb = el('<button class="btn quiet" style="padding:4px 8px;font-size:13px">이 대화에서 남길 한 줄 →</button>');
+      kb.onclick = function(){
+        kb.disabled = true; kb.textContent = "정리하는 중…";
+        var tr = AIC.log.filter(function(m){ return !m.err && m.text; }).map(function(m){
+          return (m.role === "u" ? "부모: " : "대화 상대: ") + m.text;
+        }).join("\n");
+        aiLoad().then(function(){
+          return aiModel({ generationConfig:{ maxOutputTokens:160, temperature:0.4 } }).generateContent(
+            "아래는 부모와 대화 상대가 나눈 대화다. 부모가 이 대화에서 스스로 깨달았거나 기억해 두고 싶을 만한 것을 "
+            + "부모의 1인칭 문장 하나로 적어라. 60자 안팎. 따옴표, 설명, 머리말 없이 문장만.\n\n" + tr);
+        }).then(function(res){
+          editKeep(String(res.response.text() || "").trim().replace(/^["'“‘]+|["'”’]+$/g, ""));
+        }).catch(function(e){
+          toast(aiErr(e)); paintKeep();
+        });
+      };
+      keepWrap.appendChild(kb);
+    }
+    function editKeep(line){
+      keepWrap.innerHTML = "";
+      var ed = el('<div class="stack" style="gap:8px;background:var(--me-wash);border-radius:12px;padding:11px"></div>');
+      ed.appendChild(el('<div class="small" style="color:var(--me)">오늘 나의 기록으로 남깁니다. 고쳐 써도 됩니다.</div>'));
+      var t = el('<textarea style="min-height:64px;font-size:15px"></textarea>');
+      t.value = line;
+      ed.appendChild(t);
+      var r = el('<div class="btn-row"></div>');
+      var ok = el('<button class="btn primary" style="flex:1">남기기</button>');
+      var no = el('<button class="btn">취소</button>');
+      ok.onclick = function(){
+        var v = t.value.trim();
+        if(!v){ toast("한 줄을 적어 주세요."); return; }
+        var k = todayKey(), d = day(k, true), now = new Date();
+        d.me.push({ id:uid(), u:Date.now(), t:String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0"),
+                    text:v, from:"chat", tags:[] });
+        S.days[k] = d; save(); render(); syncSoon();
+        keepWrap.innerHTML = "";
+        toast("오늘 기록에 남겼습니다.");
+      };
+      no.onclick = paintKeep;
+      r.appendChild(ok); r.appendChild(no);
+      ed.appendChild(r);
+      keepWrap.appendChild(ed);
+    }
+
+    function send(raw){
+      var text = String(raw || "").trim();
+      if(!text || AIC.busy) return;
+      ta.value = ""; ta.style.height = "";
+      var ctx = (S.ai.withToday && !AIC.ctxSent) ? todayContext() : null;
+      AIC.log.push({ role:"u", text:text, ctx:!!ctx });
+      var ans = { role:"a", text:"", wait:true };
+      AIC.log.push(ans);
+      AIC.busy = true; sendB.disabled = true;
+      paintLog();
+      var payload = ctx ? (ctx + "\n\n[질문]\n" + text) : text;
+      var ready = AIC.chat ? Promise.resolve(AIC.chat) : aiLoad().then(function(){
+        AIC.chat = aiModel({ systemInstruction: aiSystem(), generationConfig:{ maxOutputTokens:1024, temperature:0.7 } })
+          .startChat({ history: [] });
+        return AIC.chat;
+      });
+      ready.then(function(chat){
+        return chat.sendMessageStream(payload);
+      }).then(function(result){
+        if(ctx) AIC.ctxSent = true;
+        paintTop();
+        return aiRead(result, function(t){
+          ans.text += t; ans.wait = false;
+          var last = logEl.lastElementChild;
+          if(last){ last.classList.remove("wait"); last.innerHTML = aiFmt(ans.text); }
+          logEl.scrollTop = logEl.scrollHeight;
+        });
+      }).then(function(){
+        if(!ans.text) ans.text = "답이 비어 있습니다. 다시 물어봐 주세요.";
+        ans.wait = false;
+      }).catch(function(e){
+        ans.wait = false; ans.err = true; ans.text = aiErr(e);
+      }).then(function(){
+        AIC.busy = false; sendB.disabled = false;
+        paintLog();
+      });
+    }
+
+    sendB.onclick = function(){ send(ta.value); };
+    /* 한글 입력 중(조합 중)에는 보내지 않습니다. 폰에서는 줄바꿈만. */
+    var fine = window.matchMedia && window.matchMedia("(pointer:fine)").matches;
+    ta.onkeydown = function(e){
+      if(fine && e.key === "Enter" && !e.shiftKey && !e.isComposing){ e.preventDefault(); send(ta.value); }
+    };
+    ta.oninput = function(){ ta.style.height = "auto"; ta.style.height = Math.min(120, ta.scrollHeight) + "px"; };
+
+    paintTop(); paintLog();
+  });
+}
+
 /* ==================== 첫 실행 ==================== */
 function openIntro(done){
   var step = 0, picked = { name:"", age:null };
@@ -2283,6 +2583,7 @@ function render(){
   else frag = viewKeep();
   view.appendChild(frag);
   renderTabs();
+  ensureFab();
 }
 
 /* ==================== 시작 ==================== */
