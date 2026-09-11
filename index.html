@@ -327,7 +327,7 @@ details.adv-box .adv-body{padding:0 15px 15px;display:flex;flex-direction:column
 "use strict";
 
 /* 앱 버전. 여기만 고치면 서비스워커 캐시 이름까지 따라갑니다(build.js가 읽어 갑니다). */
-var APP_V = "v12";
+var APP_V = "v13";
 
 /* ==================== 저장소 ==================== */
 var KEY = "naranhi.v1";
@@ -1789,6 +1789,8 @@ var FBC = {
 var SDK = "https://www.gstatic.com/firebasejs/12.19.0/";
 var FB = { app:null, auth:null, db:null, user:null, key:null, busy:false, err:null };
 var KEYSTORE = "naranhi.key";
+/* 암호화는 동기화에만 필요합니다. AI 대화 같은 다른 기능은 이 검사를 거치지 않습니다. */
+function cryptoOK(){ return !!(window.crypto && window.crypto.subtle); }
 
 /* ---------- 잠그고 풀기 ---------- */
 function b64(bytes){
@@ -1827,6 +1829,7 @@ function rememberKey(){
   });
 }
 function recallKey(){
+  if(!cryptoOK()) return Promise.resolve(false);
   var s = null;
   try{ s = localStorage.getItem(KEYSTORE); }catch(e){}
   if(!s) return Promise.resolve(false);
@@ -1838,7 +1841,6 @@ function forgetKey(){ try{ localStorage.removeItem(KEYSTORE); }catch(e){} FB.key
 /* ---------- Firebase 불러오기 ---------- */
 function fbLoad(){
   if(FB.app) return Promise.resolve(true);
-  if(!window.crypto || !crypto.subtle) return Promise.reject({ msg:"이 브라우저에서는 동기화를 쓸 수 없습니다." });
   return Promise.all([
       import(SDK + "firebase-app.js"),
       import(SDK + "firebase-auth.js"),
@@ -1997,6 +1999,7 @@ function pullAll(){
 
 function syncNow(quiet){
   if(!S.sync.on || FB.busy) return Promise.resolve(null);
+  if(!cryptoOK()){ FB.err = "이 브라우저에서는 동기화를 쓸 수 없습니다."; return Promise.resolve(null); }
   if(!navigator.onLine){ if(!quiet) toast("인터넷이 없습니다. 연결되면 다시 시도하세요."); return Promise.resolve(null); }
   FB.busy = true; FB.err = null;
   if(TAB === "keep") render();
@@ -2045,6 +2048,7 @@ function openSyncSetup(onDone){
     w.insertBefore(alt, w.lastElementChild);
 
     function run(useRedirect){
+      if(!cryptoOK()){ stat.textContent = "이 브라우저에서는 동기화를 쓸 수 없습니다."; return; }
       go.disabled = true; alt.disabled = true;
       stat.textContent = useRedirect ? "구글 로그인 페이지로 이동합니다…" : "로그인 창을 여는 중…";
       fbSignIn(useRedirect).then(function(user){
@@ -2163,18 +2167,18 @@ function syncCard(){
 }
 
 /* ==================== AI에게 묻기 ====================
-   일기를 쓰다 깨달은 것을 바로 물어보는 대화창.
-   - 대화는 저장하지 않습니다. 앱이 열려 있는 동안만 기억하고, 앱을 다시 열면 사라집니다.
-   - 일기는 '오늘 기록 함께 보기'를 켰을 때만 나갑니다. 한 번 켜 두면 계속 켜져 있습니다.
-   - Gemini(Firebase AI Logic)가 답합니다. 결제 계정이 연결된 프로젝트에서는 입력이 학습에 쓰이지 않습니다. */
+   일기를 쓰다 떠오른 것을 바로 물어보는 대화창.
+   - 겨를은 대화를 저장하지 않습니다. 앱이 열려 있는 동안만 기억하고, 앱을 다시 열면 사라집니다.
+   - 일기는 '오늘 기록 함께 보기'를 켰을 때만 갑니다(기본 꺼짐). 꺼져 있으면 입력한 질문만 갑니다(아이 이름·나이도 넣지 않음).
+   - Gemini 무료 구간(Firebase AI Logic, 결제 미연결)을 씁니다. 무료 약관상 구글이 입력을 보관·검토할 수 있어,
+     그 사실을 대화창 아래에 표시합니다. */
 var AI_MODEL = "gemini-3.8-flash";
 var AIC = { M:null, ai:null, chat:null, log:[], ctxSent:false, busy:false };
 
 function aiSystem(){
-  var age = S.child && S.child.age;
-  var who = (typeof age === "number") ? ("만 " + age + "세 아이") : "어린 아이";
   return [
-    "너는 '겨를'이라는 일기 앱 안에서 부모와 이야기하는 대화 상대다. 사용자는 " + who + "를 키우는 부모다.",
+    "너는 '겨를'이라는 일기 앱 안에 있는 대화 상대다. 사용자는 아이를 키우는 부모이고, 일기를 쓰다 떠오른 것을 묻는다.",
+    "육아나 아이와의 관계 질문이 많겠지만, 다른 질문이 오면 육아로 끌고 가지 말고 그 질문에 그대로 답한다.",
     "",
     "말하는 방식",
     "- 한국어로, 따뜻하지만 담백하게 말한다. 과한 칭찬이나 감탄은 하지 않는다.",
@@ -2183,7 +2187,7 @@ function aiSystem(){
     "- 사용자를 판단하거나 탓하지 않는다. 부모도 지치는 사람이라는 전제에서 이야기한다.",
     "",
     "내용",
-    "- 아이의 행동은 발달 단계의 맥락에서 설명하고, 오늘 바로 해볼 수 있는 구체적인 행동을 1~3개 제안한다.",
+    "- 육아 질문이면 아이의 행동을 발달 단계의 맥락에서 설명하고, 오늘 바로 해볼 수 있는 구체적인 행동을 1~3개 제안한다.",
     "- 상황이 모호하면 추측하기 전에 한 가지만 되묻는다.",
     "- 진단하지 않는다. 장애나 증후군의 이름을 붙이지 않는다. 걱정되는 신호가 보이면 소아청소년과나 아동 발달·심리 전문가 상담을 권한다.",
     "- 근거가 약한 이야기는 단정하지 않는다.",
@@ -2191,8 +2195,8 @@ function aiSystem(){
     "위기",
     "- 아이나 사용자가 다치거나 위험한 상황, 스스로를 해치고 싶다는 말이 나오면 다른 조언보다 먼저 도움받을 곳을 알린다: 자살예방 상담 109, 정신건강 위기상담 1577-0199, 아동학대 신고 112, 응급 119.",
     "",
-    "일기",
-    "- 사용자가 [오늘 기록]을 함께 보내면 그 구체적인 내용을 근거로 이야기한다. 기록에 없는 사실은 지어내지 않는다."
+    "맥락",
+    "- 사용자가 [오늘 기록]을 함께 보내거나 자기 상황을 적어 보내면, 그 구체적인 내용을 근거로 이야기한다. 말하지 않은 사실은 지어내지 않는다."
   ].join("\n");
 }
 function aiLoad(){
@@ -2288,14 +2292,14 @@ function openChat(){
     var sendB = el('<button class="send" aria-label="보내기"><svg viewBox="0 0 24 24"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg></button>');
     inWrap.appendChild(ta); inWrap.appendChild(sendB);
     box.appendChild(inWrap);
-    box.appendChild(el('<div class="chat-foot">Gemini가 답합니다 · 대화는 저장되지 않습니다 · 진단이 아닌 참고용입니다</div>'));
+    box.appendChild(el('<div class="chat-foot">Gemini(무료)가 답합니다 · 겨를에는 남지 않지만 무료 약관상 구글 쪽엔 보관될 수 있습니다 · 진단이 아닌 참고용입니다</div>'));
     sheet.appendChild(box);
 
     function paintTop(){
       chip.setAttribute("aria-pressed", S.ai.withToday ? "true" : "false");
       if(S.ai.withToday){
         cap.textContent = todayContext()
-          ? "켜짐 · 오늘 쓴 기록이 질문과 함께 Gemini에게 갑니다."
+          ? "켜짐 · 오늘 쓴 기록이 질문과 함께 Gemini에게 갑니다. 무료라 구글 쪽에 남을 수 있습니다."
           : "켜짐 · 다만 오늘은 아직 쓴 기록이 없습니다.";
       } else {
         cap.textContent = AIC.ctxSent
@@ -2315,6 +2319,7 @@ function openChat(){
     };
 
     function paintLog(){
+      fresh.hidden = !AIC.log.length;
       logEl.innerHTML = "";
       if(!AIC.log.length){
         var st = el('<div class="starters"></div>');
@@ -2400,6 +2405,23 @@ function openChat(){
       AIC.busy = true; sendB.disabled = true;
       paintLog();
       var payload = ctx ? (ctx + "\n\n[질문]\n" + text) : text;
+
+      /* 30초 동안 첫 글자가 안 오면 멈춘 것으로 보고 풀어 줍니다. 늦게 온 응답은 버립니다. */
+      var alive = true, gotAny = false;
+      function finish(){
+        if(!alive) return;
+        alive = false; clearTimeout(dog);
+        AIC.busy = false; sendB.disabled = false;
+        paintLog();
+      }
+      var dog = setTimeout(function(){
+        if(gotAny) return;
+        ans.wait = false; ans.err = true;
+        ans.text = "응답이 오지 않습니다. 인터넷 연결을 확인하고 다시 물어봐 주세요.";
+        AIC.chat = null;           /* 멈춘 대화는 버리고, 다음 질문은 새로 시작합니다 */
+        finish();
+      }, 30000);
+
       var ready = AIC.chat ? Promise.resolve(AIC.chat) : aiLoad().then(function(){
         AIC.chat = aiModel({ systemInstruction: aiSystem(), generationConfig:{ maxOutputTokens:1024, temperature:0.7 } })
           .startChat({ history: [] });
@@ -2408,23 +2430,25 @@ function openChat(){
       ready.then(function(chat){
         return chat.sendMessageStream(payload);
       }).then(function(result){
+        if(!alive) return;
         if(ctx) AIC.ctxSent = true;
         paintTop();
         return aiRead(result, function(t){
+          if(!alive) return;
+          gotAny = true;
           ans.text += t; ans.wait = false;
           var last = logEl.lastElementChild;
           if(last){ last.classList.remove("wait"); last.innerHTML = aiFmt(ans.text); }
           logEl.scrollTop = logEl.scrollHeight;
         });
       }).then(function(){
+        if(!alive) return;
         if(!ans.text) ans.text = "답이 비어 있습니다. 다시 물어봐 주세요.";
         ans.wait = false;
       }).catch(function(e){
+        if(!alive) return;
         ans.wait = false; ans.err = true; ans.text = aiErr(e);
-      }).then(function(){
-        AIC.busy = false; sendB.disabled = false;
-        paintLog();
-      });
+      }).then(finish);
     }
 
     sendB.onclick = function(){ send(ta.value); };
