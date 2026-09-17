@@ -1,5 +1,5 @@
 /* 겨를 — 오프라인 캐시. 버전은 index.html의 APP_V를 따라갑니다. */
-const VERSION = "gyeoreul-v15";
+const VERSION = "gyeoreul-v16";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png"];
 
 self.addEventListener("install", (e) => {

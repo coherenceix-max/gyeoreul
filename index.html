@@ -282,6 +282,13 @@ details.adv-box .adv-body{padding:0 15px 15px;display:flex;flex-direction:column
 .ios-tip .row2{display:flex;gap:8px;justify-content:flex-end}
 .ios-tip button{font-size:12.5px;padding:7px 12px;border-radius:9px;border:1px solid var(--line);color:var(--muted)}
 
+/* ---------- 달력 범례 ---------- */
+.legend-wrap{display:flex;align-items:center;gap:12px}
+.legend{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
+.legend i{display:block;flex-shrink:0;width:14px;height:3px;border-radius:2px}
+.legend i.bm{background:var(--me)}
+.legend i.bk{background:var(--kid)}
+
 /* ---------- 검진 ---------- */
 .hc-card{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:15px 16px;display:flex;flex-direction:column;gap:11px}
 .hc-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -353,7 +360,7 @@ details.adv-box .adv-body{padding:0 15px 15px;display:flex;flex-direction:column
 "use strict";
 
 /* 앱 버전. 여기만 고치면 서비스워커 캐시 이름까지 따라갑니다(build.js가 읽어 갑니다). */
-var APP_V = "v15";
+var APP_V = "v16";
 
 /* ==================== 저장소 ==================== */
 var KEY = "naranhi.v1";
@@ -937,7 +944,7 @@ function viewFlow(){
   /* 달력 */
   var now = new Date(), y = now.getFullYear(), m = now.getMonth();
   var first = new Date(y, m, 1), start = first.getDay(), dim = new Date(y, m+1, 0).getDate();
-  var cal = el('<div class="card stack" style="gap:11px"><div class="spread"><span class="eyebrow">'+(m+1)+'월</span><span class="small">위 인디고 = 나 · 아래 세이지 = '+esc(S.child.name)+'</span></div></div>');
+  var cal = el('<div class="card stack" style="gap:11px"><div class="spread"><span class="eyebrow">'+(m+1)+'월</span><span class="legend-wrap"><span class="legend"><i class="bm"></i>나</span><span class="legend"><i class="bk"></i>'+esc(S.child.name)+'</span></span></div></div>');
   var g = el('<div class="grid-cal"></div>');
   WD.forEach(function(w){ g.appendChild(el('<div class="cal-h">'+w+'</div>')); });
   for(var i=0;i<start;i++) g.appendChild(el('<div class="cell out"></div>'));
