@@ -27,7 +27,7 @@ const TEXT = {
   "test": "알림이 잘 오는지 보는 중이에요",
   "checkup-last": "검진 기간이 이번 달까지예요",
   "checkup-open": "검진 기간이 시작됐어요",
-  "letter": "이번 달 편지가 도착했어요",
+  "letter": "이번 달 돌아보기가 준비됐어요",
   "book": "올해 책이 준비됐어요",
   "memory-year": "1년 전 오늘의 기록이 있어요",
   "memory-month": "한 달 전 오늘의 기록이 있어요"

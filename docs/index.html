@@ -383,7 +383,7 @@ details.adv-box .adv-body{padding:0 15px 15px;display:flex;flex-direction:column
 "use strict";
 
 /* 앱 버전. 여기만 고치면 서비스워커 캐시 이름까지 따라갑니다(build.js가 읽어 갑니다). */
-var APP_V = "v16";
+var APP_V = "v17";
 
 /* ==================== 저장소 ==================== */
 var KEY = "naranhi.v1";
@@ -594,6 +594,8 @@ function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g, function(c){ ret
 var view = document.getElementById("view");
 var sheetRoot = document.getElementById("sheetRoot");
 var TAB = "today";
+/* 흐름 탭에서 한쪽만 읽고 싶을 때. 앱을 다시 열면 전체로 돌아갑니다. */
+var FLOW = "all";
 
 function toast(msg){
   var t = el('<div style="position:fixed;left:50%;bottom:82px;transform:translateX(-50%);z-index:95;background:var(--ink);color:var(--ground);padding:11px 17px;border-radius:11px;font-size:13px;max-width:88vw;text-align:center;box-shadow:var(--shadow)">'+esc(msg)+'</div>');
@@ -964,6 +966,21 @@ function viewFlow(){
   var out = document.createDocumentFragment();
   var keys = Object.keys(S.days).sort();
 
+  /* 전체 · 나 · 아이 */
+  var ff = el('<div class="filters" style="padding:0 2px"></div>');
+  [["all", "전체"], ["me", "나"], ["kid", S.child.name]].forEach(function(f){
+    var fb = el('<button class="fchip" aria-pressed="' + (FLOW === f[0] ? "true" : "false") + '">' + esc(f[1]) + '</button>');
+    fb.onclick = function(){ if(FLOW === f[0]) return; FLOW = f[0]; render(); window.scrollTo(0, 0); };
+    ff.appendChild(fb);
+  });
+  out.appendChild(ff);
+  var showMe = FLOW !== "kid", showKid = FLOW !== "me";
+  function nTrack(k){
+    var d = S.days[k];
+    if(!d) return 0;
+    return (showMe ? (d.me || []).length : 0) + (showKid ? (d.kid || []).length : 0);
+  }
+
   /* 달력 */
   var now = new Date(), y = now.getFullYear(), m = now.getMonth();
   var first = new Date(y, m, 1), start = first.getDay(), dim = new Date(y, m+1, 0).getDate();
@@ -974,22 +991,22 @@ function viewFlow(){
   for(var dd=1; dd<=dim; dd++){
     var kk = key(new Date(y,m,dd)), day_ = S.days[kk];
     var c = el('<div class="cell'+(kk===todayKey()?" today":"")+'"><span class="d">'+dd+'</span></div>');
-    if(day_ && day_.me && day_.me.length) c.appendChild(el('<span class="bar bm"></span>'));
-    if(day_ && day_.kid && day_.kid.length) c.appendChild(el('<span class="bar bk"></span>'));
+    if(showMe && day_ && day_.me && day_.me.length) c.appendChild(el('<span class="bar bm"></span>'));
+    if(showKid && day_ && day_.kid && day_.kid.length) c.appendChild(el('<span class="bar bk"></span>'));
     g.appendChild(c);
   }
   cal.appendChild(g);
 
   var streak = 0, cur = new Date();
   while(true){
-    var dk = key(cur), dv = S.days[dk];
-    if(dv && ((dv.me&&dv.me.length)||(dv.kid&&dv.kid.length))) { streak++; cur = new Date(cur.getTime()-86400000); }
+    var dk = key(cur);
+    if(nTrack(dk)) { streak++; cur = new Date(cur.getTime()-86400000); }
     else if(dk === todayKey()) { cur = new Date(cur.getTime()-86400000); }
     else break;
     if(streak > 400) break;
   }
-  var totalEntries = keys.reduce(function(a,k){ var d=S.days[k]; return a + (d.me?d.me.length:0) + (d.kid?d.kid.length:0); }, 0);
-  cal.appendChild(el('<div class="spread small"><span>연속 <b class="mono" style="color:var(--ink)">'+streak+'</b>일</span><span>기록 <b class="mono" style="color:var(--ink)">'+totalEntries+'</b>개 · '+keys.length+'일치</span></div>'));
+  var totalEntries = keys.reduce(function(a,k){ return a + nTrack(k); }, 0);
+  cal.appendChild(el('<div class="spread small"><span>연속 <b class="mono" style="color:var(--ink)">'+streak+'</b>일</span><span>기록 <b class="mono" style="color:var(--ink)">'+totalEntries+'</b>개 · '+keys.filter(nTrack).length+'일치</span></div>'));
   out.appendChild(cal);
 
   /* 책까지 얼마나 */
@@ -1008,7 +1025,7 @@ function viewFlow(){
   var found = computeInsights(keys);
   if(!found.length){
     var need = Math.max(0, 8 - keys.length);
-    ins.appendChild(el('<div class="stack" style="gap:9px"><div class="small" style="line-height:1.7">아직 판단할 만큼 쌓이지 않았습니다. 없는 패턴을 있다고 말하지 않으려고, 양쪽에 최소 4일씩 모이기 전에는 숫자를 보여드리지 않습니다.</div><div class="progressline"><i style="width:'+Math.min(100, Math.round(keys.length/8*100))+'%"></i></div><div class="small mono">'+keys.length+' / 8일</div></div>'));
+    ins.appendChild(el('<div class="stack" style="gap:9px"><div class="small" style="line-height:1.7">아직 판단할 만큼 쌓이지 않았습니다. 없는 패턴을 있다고 말하지 않으려고, 양쪽에 최소 4일씩 모이기 전에는 숫자를 보여드리지 않습니다.</div><div class="progressline"><i style="width:'+Math.min(100, Math.round(keys.length/8*100))+'%"></i></div><div class="small">'+keys.length+'일 모았어요 · 8일부터 보여드려요</div></div>'));
   } else {
     found.forEach(function(f){
       ins.appendChild(el('<div class="insight"><div class="big">'+f.text+'</div><div class="sub">'+esc(f.sub)+'</div></div>'));
@@ -1017,29 +1034,32 @@ function viewFlow(){
   out.appendChild(ins);
 
   /* 태그 빈도 */
-  var counts = {};
-  keys.forEach(function(k){ (S.days[k].kid||[]).forEach(function(e){ (e.topics||[]).forEach(function(t){ counts[t]=(counts[t]||0)+1; }); }); });
+  var counts = {}, isMe = (FLOW === "me");
+  keys.forEach(function(k){
+    if(isMe) (S.days[k].me || []).forEach(function(e){ (e.tags || []).forEach(function(t){ counts[t] = (counts[t] || 0) + 1; }); });
+    else (S.days[k].kid || []).forEach(function(e){ (e.topics || []).forEach(function(t){ counts[t] = (counts[t] || 0) + 1; }); });
+  });
   var arr = Object.keys(counts).map(function(t){ return {t:t, n:counts[t]}; }).sort(function(a,b){ return b.n-a.n; }).slice(0,6);
   if(arr.length){
     var maxN = arr[0].n;
-    var fq = el('<div class="card stack" style="gap:12px"><span class="eyebrow">'+esc(S.child.name)+' · 자주 나온 주제</span><div class="freq"></div></div>');
+    var fq = el('<div class="card stack" style="gap:12px"><span class="eyebrow">'+(isMe ? "나 · 자주 붙인 태그" : esc(S.child.name)+" · 자주 나온 주제")+'</span><div class="freq"></div></div>');
     var fw = fq.querySelector(".freq");
     arr.forEach(function(a){
-      var row = el('<div class="freq-row"><span>'+esc(topicLabel(a.t))+'</span><span><i class="freq-bar" style="display:block;width:'+Math.round(a.n/maxN*100)+'%"></i></span><span class="freq-n">'+a.n+'</span></div>');
-      if(refById(a.t)){ row.style.cursor="pointer"; row.onclick = function(){ TAB="refs"; OPEN_REF=a.t; render(); }; }
+      var row = el('<div class="freq-row"><span>'+esc(isMe ? meTagLabel(a.t) : topicLabel(a.t))+'</span><span><i class="freq-bar" style="display:block;width:'+Math.round(a.n/maxN*100)+'%'+(isMe ? ';background:var(--me)' : '')+'"></i></span><span class="freq-n">'+a.n+'</span></div>');
+      if(!isMe && refById(a.t)){ row.style.cursor="pointer"; row.onclick = function(){ TAB="refs"; OPEN_REF=a.t; render(); }; }
       fw.appendChild(row);
     });
     out.appendChild(fq);
   }
 
   /* 최근 기록 */
-  var recent = keys.slice(-7).reverse();
+  var recent = keys.filter(nTrack).slice(-7).reverse();
   if(recent.length){
     var rec = el('<div class="stack" style="gap:13px"><span class="eyebrow">지난 기록</span></div>');
     recent.forEach(function(k){
       var d = S.days[k], es = [];
-      (d.me||[]).forEach(function(e){ es.push({track:"me", e:e}); });
-      (d.kid||[]).forEach(function(e){ es.push({track:"kid", e:e}); });
+      if(showMe) (d.me||[]).forEach(function(e){ es.push({track:"me", e:e}); });
+      if(showKid) (d.kid||[]).forEach(function(e){ es.push({track:"kid", e:e}); });
       if(!es.length) return;
       es.sort(function(a,b){ return a.e.t<b.e.t?-1:1; });
       var blk = el('<div class="card stack" style="gap:11px"><div class="spread"><span class="small"><span class="mono">'+esc(k)+'</span> · '+esc(fmtKo(k).replace(/^\d+월 \d+일 /,""))+(d.ritual&&d.ritual.sleep?' · 잠 '+d.ritual.sleep+'h':'')+'</span></div></div>');
@@ -1070,7 +1090,7 @@ function computeInsights(keys){
     var lo=avg(lowS), hi=avg(highS);
     if(Math.abs(hi-lo)>=0.4){
       res.push({ text:"5시간 이하로 잔 날, 당신의 기분은 평균 <b class=\"mono\">"+lo.toFixed(1)+"</b>. 그보다 잔 날은 <b class=\"mono\">"+hi.toFixed(1)+"</b>입니다.",
-                 sub:"n="+lowS.length+" vs "+highS.length+" · 5점 만점" });
+                 sub:"5시간 이하로 잔 날 "+lowS.length+"일과 더 잔 날 "+highS.length+"일을 견줘 봤어요 · 기분은 5점 만점" });
     }
   }
 
@@ -1085,7 +1105,7 @@ function computeInsights(keys){
     var ys=avg(yellSleep), cs=avg(calmSleep);
     if(cs-ys>=0.5){
       res.push({ text:"아이에게 소리친 날, 전날 잠은 평균 <b class=\"mono\">"+ys.toFixed(1)+"시간</b>이었습니다. 그러지 않은 날은 <b class=\"mono\">"+cs.toFixed(1)+"시간</b>.",
-                 sub:"n="+yellSleep.length+" vs "+calmSleep.length+" · 인과가 아니라 같이 움직인 패턴입니다" });
+                 sub:"소리친 날 "+yellSleep.length+"일과 그러지 않은 날 "+calmSleep.length+"일 · 원인이라기보다 같이 움직인 패턴이에요" });
     }
   }
 
@@ -1116,7 +1136,7 @@ function computeInsights(keys){
   });
   if(wYes.length>=4 && wNo.length>=4 && avg(wYes)-avg(wNo) >= 0.4){
     res.push({ text:"물을 챙긴 날의 기분이 평균 <b class=\"mono\">"+(avg(wYes)-avg(wNo)).toFixed(1)+"점</b> 높습니다.",
-               sub:"n="+wYes.length+" vs "+wNo.length+" · 물이 원인이라기보단, 챙길 여유가 있던 날일 수 있습니다" });
+               sub:"물 챙긴 날 "+wYes.length+"일과 아닌 날 "+wNo.length+"일 · 물 때문이라기보다, 챙길 여유가 있던 날일 수 있어요" });
   }
   return res.slice(0,3);
 }
@@ -1273,10 +1293,22 @@ function viewKeep(){
     var q = qs[qs.length-1];
     c3.appendChild(el('<div class="spine-sample"><div class="ss-t">남겨진 말</div><div class="ss-q">“'+esc(q.t)+'”</div><div class="ss-a">'+esc(q.k)+'</div></div>'));
   }
+  var bkTrack = "all";
+  var bkf = el('<div class="filters"></div>');
+  [["all", "전체"], ["kid", S.child.name + "만"], ["me", "나만"]].forEach(function(f){
+    var kb = el('<button class="fchip" aria-pressed="' + (f[0] === "all" ? "true" : "false") + '">' + esc(f[1]) + '</button>');
+    kb.onclick = function(){
+      bkTrack = f[0];
+      Array.prototype.forEach.call(bkf.querySelectorAll(".fchip"), function(x){ x.setAttribute("aria-pressed", x === kb ? "true" : "false"); });
+    };
+    bkf.appendChild(kb);
+  });
+  c3.appendChild(bkf);
   var bb = el('<button class="btn'+(n>=BOOK_GOAL?" primary":"")+'" style="width:100%">'+(n>=BOOK_GOAL?"인쇄용 파일 만들기":"지금까지 분량으로 미리 만들어 보기")+'</button>');
   bb.onclick = function(){
     if(!keys.length){ toast("아직 기록이 없습니다."); return; }
-    doSave("겨를-책-" + todayKey().replace(/-/g,"") + ".html", new Blob([bookHtml()], {type:"text/html"}), function(){
+    var tag = bkTrack === "me" ? "-나" : bkTrack === "kid" ? "-" + S.child.name : "";
+    doSave("겨를-책" + tag + "-" + todayKey().replace(/-/g,"") + ".html", new Blob([bookHtml(null, bkTrack)], {type:"text/html"}), function(){
       toast("파일을 브라우저로 열고 인쇄 → PDF로 저장을 고르세요.");
     });
   };
@@ -1642,24 +1674,35 @@ function bookMeter(){
     + '</span></div></div>');
   return m;
 }
-function bookHtml(year){
+function bookHtml(year, track){
+  var onlyMe = track === "me", onlyKid = track === "kid";
   var keys = Object.keys(S.days).sort().filter(hasEntries).filter(function(k){ return !year || k.slice(0, 4) === String(year); });
   var first = keys[0] || todayKey(), last = keys[keys.length-1] || todayKey();
   var quotes = [], body = [];
   keys.forEach(function(k){
     var d = S.days[k], parts = [];
-    (d.kid||[]).forEach(function(e){
+    if(!onlyMe) (d.kid||[]).forEach(function(e){
       if(!e.text) return;
       parts.push('<div class="e k"><div class="m">'+esc(S.child.name)+(e.feel?' · '+esc(e.feel):'')+'</div><p>'+esc(e.text)+'</p></div>');
       if(e.text.length <= 70) quotes.push({t:e.text, k:k});
     });
-    (d.me||[]).forEach(function(e){
+    if(!onlyKid) (d.me||[]).forEach(function(e){
       if(!e.text) return;
       parts.push('<div class="e m"><div class="m">나'+(e.mood?' · 기분 '+e.mood:'')+'</div><p>'+esc(e.text)+'</p></div>');
     });
     if(parts.length) body.push('<section><h2>'+esc(k)+' <small>'+esc(fmtKo(k))+'</small></h2>'+parts.join("")+'</section>');
   });
   var qPick = quotes.slice(-14);
+  var letterPages = "";
+  if(!onlyMe){
+    Object.keys(S.letters || {}).sort().forEach(function(mm){
+      var LT = S.letters[mm];
+      if(!LT || !LT.toChild || !LT.toChild.text) return;
+      if(year && mm.slice(0, 4) !== String(year)) return;
+      letterPages += '<section><h2>' + esc(mm) + ' <small>' + esc(S.child.name) + '에게</small></h2>'
+        + '<div class="e"><p>' + esc(LT.toChild.text) + '</p></div></section>';
+    });
+  }
   return '<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>겨를 · '+esc(S.child.name)+'</title>'
     + ''
     + '<style>'
@@ -1685,9 +1728,10 @@ function bookHtml(year){
     + '</style></head><body>'
     + '<div class="tip">이 파일을 브라우저에서 열고 <b>인쇄 &rarr; PDF로 저장</b>을 고르면 책 한 권이 됩니다. 이 안내문은 인쇄되지 않습니다.</div>'
     + '<div class="cover"><div class="sub">'+esc(first)+' — '+esc(last)+'</div><h1>겨를</h1><div class="rule"></div>'
-    + '<div class="sub">'+esc(S.child.name)+'와(과) 나의 날들</div></div>'
+    + '<div class="sub">'+(onlyMe ? "나의 날들" : onlyKid ? esc(S.child.name)+"의 날들" : esc(S.child.name)+"와(과) 나의 날들")+'</div></div>'
     + (qPick.length ? '<div class="quotes"><h3>남겨진 말</h3>'
         + qPick.map(function(q){ return '<p class="q">“'+esc(q.t)+'”<span>'+esc(q.k)+'</span></p>'; }).join("") + '</div>' : '')
+    + letterPages
     + body.join("")
     + '</body></html>';
 }
@@ -2848,7 +2892,7 @@ function notifyRows(cs){
     else if(!VAPID_KEY) desc.textContent = "곧 켤 수 있어요";
     else if(busy) desc.textContent = "켜는 중…";
     else if(!on && !FB.user) desc.textContent = "알림을 받으려면 구글 로그인이 필요해요. 누르면 로그인 창이 열려요";
-    else desc.textContent = "다시 보기 · 편지 도착 · 검진 시기 · 책 — 하루 한 번까지, 내용 없이"
+    else desc.textContent = "다시 보기 · 돌아보기 · 검진 시기 · 책 — 하루 한 번까지, 내용 없이"
       + (on && S.consent && S.consent.notify ? " · 동의함 " + S.consent.notify.at.slice(0, 10) : "");
     more.hidden = !on;
   }
@@ -2882,7 +2926,7 @@ function notifyRows(cs){
     hours.querySelector(".filters").appendChild(hb);
   });
   var kinds = el('<div class="stack" style="gap:6px"><span class="small">받을 것</span><div class="filters"></div></div>');
-  [["memory", "다시 보기"], ["letter", "편지"], ["checkup", "검진"], ["book", "책"]].forEach(function(k){
+  [["memory", "다시 보기"], ["letter", "돌아보기"], ["checkup", "검진"], ["book", "책"]].forEach(function(k){
     var kb = el('<button class="fchip">' + k[1] + '</button>');
     kb.setAttribute("aria-pressed", S.notify.kinds[k[0]] !== false ? "true" : "false");
     kb.onclick = function(){
@@ -2910,8 +2954,8 @@ function notifyRows(cs){
   if(st === "ok" && VAPID_KEY) fbReady().then(paint, function(){});
 }
 
-/* ==================== 한 달 편지 ====================
-   매달 1일, 지난달 기록으로 쓰는 편지. 기기 안에서만 만들어집니다.
+/* ==================== 한 달 돌아보기 ====================
+   매달 1일, 지난달 기록을 모아 정리합니다. 기기 안에서만 만들어집니다.
    기록이 없던 달에도 옵니다 — 쉬다 돌아온 사람을 모른 척하지 않으려고. */
 function ym(d){ return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); }
 function ymLabel(m){ return (+m.split("-")[1]) + "월"; }
@@ -2943,8 +2987,8 @@ function letterCard(){
   if(L.read) return null;
   var used = Object.keys(S.days).some(function(k){ return hasEntries(k) && k.slice(0, 7) <= m; });
   if(!used) return null;
-  var c = el('<div class="hc-card letter-card"><span class="hc-name">' + esc(ymLabel(m)) + '의 편지가 도착했어요</span>'
-    + '<div class="small" style="line-height:1.65">지난달 기록으로 쓴 편지입니다.</div></div>');
+  var c = el('<div class="hc-card letter-card"><span class="hc-name">' + esc(ymLabel(m)) + ' 돌아보기가 준비됐어요</span>'
+    + '<div class="small" style="line-height:1.65">지난달 기록을 모아 정리했어요.</div></div>');
   var go = el('<button class="btn" style="align-self:flex-start">열어 보기</button>');
   go.onclick = function(){ openLetter(m, false); };
   c.appendChild(go);
@@ -2953,7 +2997,7 @@ function letterCard(){
 function openLetter(m, preview){
   if(!S.letters) S.letters = {};
   var L = S.letters[m] || {}, D = letterData(m), who = S.child.name;
-  openSheet(ymLabel(m) + "의 편지" + (preview ? " · 미리 보기" : ""), function(sheet){
+  openSheet(ymLabel(m) + " 돌아보기" + (preview ? " · 미리 보기" : ""), function(sheet){
     var w = el('<div class="stack" style="gap:20px"></div>');
     if(!D.days){
       w.appendChild(el('<div class="letter-open">' + esc(ymLabel(m)) + '엔 남긴 기록이 없었어요.<br>괜찮아요. 바쁜 달도 있으니까요.</div>'));
@@ -3009,16 +3053,92 @@ function openLetter(m, preview){
     var bs = el('<div class="letter-sec"><span class="eyebrow">책까지</span></div>');
     bs.appendChild(bookMeter());
     w.appendChild(bs);
+
+    var toChild = el('<div class="letter-sec"><span class="eyebrow">' + esc(who) + '에게</span></div>');
+    if(L.toChild && L.toChild.text){
+      toChild.appendChild(el('<div class="letter-line" style="white-space:pre-wrap">' + esc(L.toChild.text) + '</div>'));
+      var fix = el('<button class="btn quiet" style="align-self:flex-start;padding:4px 8px;font-size:13px">고쳐 쓰기</button>');
+      fix.onclick = function(){ openChildLetter(m); };
+      toChild.appendChild(fix);
+    } else {
+      toChild.appendChild(el('<div class="small" style="line-height:1.65">이번 달 기록으로 아이에게 편지를 남겨 보세요. 책을 만들 때 함께 실립니다.</div>'));
+      var wr2 = el('<button class="btn" style="align-self:flex-start">편지 쓰기</button>');
+      wr2.onclick = function(){ openChildLetter(m); };
+      toChild.appendChild(wr2);
+    }
+    w.appendChild(toChild);
     sheet.appendChild(w);
   });
   if(!preview && !L.read){
     L.read = todayKey(); S.letters[m] = L; S.profileU = Date.now(); save(); syncSoon(); render();
   }
 }
+/* 아이에게 쓰는 편지 — 초안은 AI가 만들고, 문장은 부모가 고칩니다.
+   나중에 아이가 읽을 글이라, 완성본을 AI가 쓰게 두지 않습니다. */
+function childPrompt(m){
+  var who = S.child.name, L = ["아래는 부모가 " + ymLabel(m) + " 한 달 동안 아이에 대해 남긴 기록이다.",
+    "이걸 재료로, 부모가 아이에게 보내는 짧은 편지 초안을 써라.", "",
+    "규칙",
+    "- 부모의 목소리로, 아이를 부르며 쓴다. 아이 이름은 " + who + ".",
+    "- 5~8문장. 담백하고 따뜻하게. 과장된 표현이나 미사여구는 쓰지 않는다.",
+    "- 기록에 없는 일은 절대 지어내지 않는다. 적힌 장면만 쓴다.",
+    "- 교훈이나 훈계로 끝내지 않는다. 서명이나 날짜는 붙이지 않는다.", "",
+    "[" + ymLabel(m) + "의 기록]"];
+  daysInYm(m).forEach(function(k){
+    var d = S.days[k];
+    (d.kid || []).forEach(function(e){
+      if(!e.text) return;
+      var bits = [k, e.feel || ""].filter(Boolean);
+      var tags = (e.topics || []).map(topicLabel);
+      if(tags.length) bits.push(tags.join(" "));
+      L.push("- " + bits.join(" · ") + " — " + e.text);
+    });
+  });
+  return L.join("\n");
+}
+function openChildLetter(m){
+  var who = S.child.name;
+  if(!S.letters) S.letters = {};
+  var L = S.letters[m] || (S.letters[m] = {});
+  openSheet(ymLabel(m) + " · " + who + "에게", function(sheet, close){
+    var w = el('<div class="stack"></div>');
+    var ta = el('<textarea style="min-height:190px" placeholder="' + esc(who) + '에게 하고 싶은 말을 적어 주세요."></textarea>');
+    ta.value = (L.toChild && L.toChild.text) || "";
+    w.appendChild(ta);
+    var row = el('<div class="btn-row"></div>');
+    var draft = el('<button class="btn" style="flex:1">초안 받기</button>');
+    draft.onclick = function(){
+      if(!daysInYm(m).length){ toast("이 달엔 기록이 없어 초안을 만들 수 없어요."); return; }
+      draft.disabled = true; draft.textContent = "쓰는 중…";
+      aiLoad().then(function(){
+        return aiModel({ generationConfig:{ maxOutputTokens:800, temperature:0.8 } }).generateContent(childPrompt(m));
+      }).then(function(res){
+        var t = String(res.response.text() || "").trim();
+        if(!t) throw { msg:"초안이 비어 있어요. 다시 눌러 주세요." };
+        ta.value = ta.value.trim() ? ta.value.trim() + "\n\n" + t : t;
+        ta.scrollTop = 0;
+      }).catch(function(e){ toast(aiErr(e)); })
+        .then(function(){ draft.disabled = false; draft.textContent = "초안 다시 받기"; });
+    };
+    var keep = el('<button class="btn primary" style="flex:1">남기기</button>');
+    keep.onclick = function(){
+      var t = ta.value.trim();
+      if(!t){ toast("한 줄이라도 적어 주세요."); return; }
+      L.toChild = { text:t, at:todayKey() };
+      S.letters[m] = L; S.profileU = Date.now();
+      save(); syncSoon(); close(); render();
+      toast("편지를 남겼어요. 책에 함께 실립니다.");
+    };
+    row.appendChild(draft); row.appendChild(keep);
+    w.appendChild(row);
+    w.appendChild(el('<div class="disclaimer">직접 쓰시면 아무것도 밖으로 나가지 않습니다. <b>초안 받기</b>를 누를 때만 이 달 기록이 Gemini로 가고, 무료 약관상 구글 쪽에 남을 수 있습니다.<br><br>초안은 재료일 뿐이니 마지막 문장은 직접 고쳐 쓰시길 권합니다. 나중에 아이가 읽을 글이니까요.</div>'));
+    sheet.appendChild(w);
+  });
+}
 function lettersSection(){
-  var lt = el('<div class="card stack" style="gap:10px"><span class="eyebrow">편지</span></div>');
+  var lt = el('<div class="card stack" style="gap:10px"><span class="eyebrow">돌아보기</span></div>');
   var cur = ym(new Date());
-  var pv = el('<button class="hc-row" style="text-align:left;width:100%"><span class="hc-name">' + esc(ymLabel(cur)) + '의 편지 미리 보기</span><span class="small">지금까지</span></button>');
+  var pv = el('<button class="hc-row" style="text-align:left;width:100%"><span class="hc-name">' + esc(ymLabel(cur)) + ' 돌아보기 미리 보기</span><span class="small">지금까지</span></button>');
   pv.onclick = function(){ openLetter(cur, true); };
   lt.appendChild(pv);
   var months = {};
@@ -3026,7 +3146,7 @@ function lettersSection(){
   Object.keys(months).sort().reverse().slice(0, 6).forEach(function(m){
     var unread = !(S.letters && S.letters[m] && S.letters[m].read);
     var row = el('<button class="hc-row" style="text-align:left;width:100%"><span class="hc-name">'
-      + esc(m.slice(0, 4)) + '년 ' + esc(ymLabel(m)) + '의 편지</span>' + (unread ? '<span class="hc-pill">안 읽음</span>' : '') + '</button>');
+      + esc(m.slice(0, 4)) + '년 ' + esc(ymLabel(m)) + ' 돌아보기</span>' + (unread ? '<span class="hc-pill">안 읽음</span>' : '') + '</button>');
     row.onclick = function(){ openLetter(m, false); };
     lt.appendChild(row);
   });
