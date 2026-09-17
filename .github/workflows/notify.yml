@@ -1,0 +1,44 @@
+# 겨를 알림 — 결제 없이 GitHub Actions(공개 저장소 무료)로 돌립니다.
+# 서버는 날짜만 압니다. 기기가 올려 둔 '보낼 날짜 목록'을 보고 내용 없는 알림만 보냅니다.
+name: 겨를 알림
+
+on:
+  schedule:
+    - cron: "30 * * * *"   # 매시 30분(UTC). 한국 시각으로 각자 정한 시간대에 보냄
+    - cron: "7 0 1 * *"    # 매달 1일: 저장소 활동 유지 — 공개 저장소 예약 실행은 60일 활동이 없으면 멈춤
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notify
+  cancel-in-progress: false
+
+jobs:
+  send:
+    if: github.event.schedule != '7 0 1 * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm install --prefix scripts --no-audit --no-fund
+      - run: node scripts/notify.mjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+  keepalive:
+    if: github.event.schedule == '7 0 1 * *'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - run: |
+          git config user.name "gyeoreul-bot"
+          git config user.email "gyeoreul-bot@users.noreply.github.com"
+          git commit --allow-empty -m "keepalive: 예약 알림 유지"
+          git push

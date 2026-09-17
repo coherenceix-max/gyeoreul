@@ -1,5 +1,5 @@
 /* 겨를 — 오프라인 캐시. 버전은 index.html의 APP_V를 따라갑니다. */
-const VERSION = "gyeoreul-v13";
+const VERSION = "gyeoreul-v15";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png"];
 
 self.addEventListener("install", (e) => {
@@ -10,6 +10,34 @@ self.addEventListener("activate", (e) => {
     caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== VERSION).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
+});
+// 알림: 서버가 보낸 내용 없는 알림을 띄우고, 누르면 해당 화면으로 엽니다.
+self.addEventListener("push", (e) => {
+  let p = {};
+  try { p = e.data ? e.data.json() : {}; } catch (_) {}
+  const d = p.data || p;
+  e.waitUntil(self.registration.showNotification(d.title || "겨를", {
+    body: d.body || "새 소식이 있어요",
+    icon: "icon-192.png",
+    badge: "icon-192.png",
+    tag: d.kind || "gyeoreul",
+    data: { url: d.url || "./" }
+  }));
+});
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || "./";
+  e.waitUntil((async () => {
+    const all = await clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const c of all) {
+      if ("focus" in c) {
+        await c.focus();
+        if ("navigate" in c) { try { await c.navigate(url); } catch (_) {} }
+        return;
+      }
+    }
+    if (clients.openWindow) await clients.openWindow(url);
+  })());
 });
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;

@@ -1,0 +1,10 @@
+{
+  "name": "gyeoreul-notify",
+  "private": true,
+  "type": "module",
+  "description": "겨를 예약 알림 — GitHub Actions에서만 실행",
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "firebase-admin": "14.4.0"
+  }
+}

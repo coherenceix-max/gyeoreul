@@ -189,6 +189,34 @@ self.addEventListener("activate", (e) => {
       .then(() => self.clients.claim())
   );
 });
+// 알림: 서버가 보낸 내용 없는 알림을 띄우고, 누르면 해당 화면으로 엽니다.
+self.addEventListener("push", (e) => {
+  let p = {};
+  try { p = e.data ? e.data.json() : {}; } catch (_) {}
+  const d = p.data || p;
+  e.waitUntil(self.registration.showNotification(d.title || "겨를", {
+    body: d.body || "새 소식이 있어요",
+    icon: "icon-192.png",
+    badge: "icon-192.png",
+    tag: d.kind || "gyeoreul",
+    data: { url: d.url || "./" }
+  }));
+});
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || "./";
+  e.waitUntil((async () => {
+    const all = await clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const c of all) {
+      if ("focus" in c) {
+        await c.focus();
+        if ("navigate" in c) { try { await c.navigate(url); } catch (_) {} }
+        return;
+      }
+    }
+    if (clients.openWindow) await clients.openWindow(url);
+  })());
+});
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
